@@ -1,10 +1,10 @@
 'use strict';
 /* ============================================================
-   NEON SQUADRON  v1.65
-   Novi redosled ispadanja nacrta
+   NEON SQUADRON  v1.66
+   Ispravke: kvarovi kroz niz, glic weavera i tornjeva, meteori na ivicama, cene jezgra
    ============================================================ */
 
-const VER = 'v1.65';
+const VER = 'v1.66';
 const VW = 540;
 let VH = 960, SCALE = 1, DPR = 1, SAFE_TOP = 0, SAFE_BOT = 0;
 
@@ -489,7 +489,7 @@ const ENEMY = {
 
 const COMP = {
   cpu:    { name: 'GLAVNI RAČUNAR', letter: 'R', color: '#7df9ff', core: true,
-            up: [150, 350, 700, 1300, 2300, 4000, 6800, 11000, 18000], desc: 'broj modula i plafon nivoa', pw: 0,
+            up: [400, 950, 1950, 3600, 6400, 11200, 19000, 31000, 50000], desc: 'broj modula i plafon nivoa', pw: 0,
             stat: function (lv) {
               return TAB.modules[lv] + ' modula, delovi do nivoa ' + lv + ', oklop ' + TAB.hull[lv];
             } },
@@ -581,7 +581,7 @@ const COMP = {
               return TAB.rlN[lv] + ' zrna × ' + TAB.rlDmg[lv] + ' štete, luk za ' + fmt1(TAB.rlDur[lv]) + 's';
             } },
   copilot:{ name: 'KOPILOT', letter: 'KP', color: '#ffb3ec', buy: 350, max: 1, core: true,
-            up: [200, 410, 800, 1400, 2500, 4350, 7500, 12800, 21000],
+            up: [500, 1050, 2100, 3800, 6800, 11800, 20000, 33000, 53000],
             desc: 'koliko oružja možeš držati aktivno u isto vreme', pw: 1.5, pwn: '/s',
             stat: function (lv) { return 'do ' + (1 + 2 * lv) + ' aktivnih oružja (bez njega samo 1)'; } },
   pulse:  { name: 'PULS LASER', letter: 'PL', color: '#ff4d6d', buy: 540, max: 1,
@@ -1197,247 +1197,247 @@ function estDraw() {
 
 const LEVELS = [
   { name: 'NIVO 1', accent: '#00f0ff', waves: [
-      { gap: 1.2, spawn: [{ t: 'grunt', n: 5, dx: 0.5, spread: 0.55, every: 0.30 }] },
-      { gap: 1.0, spawn: [{ t: 'grunt', n: 4, dx: 0.28, spread: 0.30, every: 0.25 },
+      { gap: 0.95, spawn: [{ t: 'grunt', n: 5, dx: 0.5, spread: 0.55, every: 0.30 }] },
+      { gap: 0.8, spawn: [{ t: 'grunt', n: 4, dx: 0.28, spread: 0.30, every: 0.25 },
                           { t: 'grunt', n: 4, dx: 0.72, spread: 0.30, every: 0.25, delay: 0.6 }] },
-      { gap: 1.0, spawn: [{ t: 'weaver', n: 4, dx: 0.5, spread: 0.6, every: 0.45 }] },
-      { gap: 1.0, spawn: [{ t: 'grunt', n: 6, dx: 0.5, spread: 0.7, every: 0.20, pattern: 'v' },
+      { gap: 0.8, spawn: [{ t: 'weaver', n: 4, dx: 0.5, spread: 0.6, every: 0.45 }] },
+      { gap: 0.8, spawn: [{ t: 'grunt', n: 6, dx: 0.5, spread: 0.7, every: 0.20, pattern: 'v' },
                           { t: 'weaver', n: 2, dx: 0.5, spread: 0.4, every: 0.5, delay: 1.4 }] },
-      { gap: 1.2, spawn: [{ t: 'shooter', n: 2, dx: 0.5, spread: 0.45, every: 0.7 }] },
-      { gap: 1.2, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.8, every: 0.18, pattern: 'rand' },
+      { gap: 0.95, spawn: [{ t: 'shooter', n: 2, dx: 0.5, spread: 0.45, every: 0.7 }] },
+      { gap: 0.95, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.8, every: 0.18, pattern: 'rand' },
                           { t: 'shooter', n: 2, dx: 0.5, spread: 0.6, every: 0.6, delay: 1.8 }] }
     ] },
   { name: 'NIVO 2', accent: '#ff2bd6', waves: [
-      { gap: 1.0, spawn: [{ t: 'weaver', n: 5, dx: 0.5, spread: 0.7, every: 0.28 }] },
-      { gap: 1.0, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.75, every: 0.16, pattern: 'v' }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 1, dx: 0.5, spread: 0, every: 0 },
+      { gap: 0.8, spawn: [{ t: 'weaver', n: 5, dx: 0.5, spread: 0.7, every: 0.28 }] },
+      { gap: 0.8, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.75, every: 0.16, pattern: 'v' }] },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 1, dx: 0.5, spread: 0, every: 0 },
                           { t: 'grunt', n: 4, dx: 0.5, spread: 0.7, every: 0.3, delay: 1.0 }] },
-      { gap: 1.0, spawn: [{ t: 'shooter', n: 3, dx: 0.5, spread: 0.6, every: 0.5 },
+      { gap: 0.8, spawn: [{ t: 'shooter', n: 3, dx: 0.5, spread: 0.6, every: 0.5 },
                           { t: 'weaver', n: 3, dx: 0.5, spread: 0.5, every: 0.4, delay: 1.6 }] },
-      { gap: 1.0, spawn: [{ t: 'grunt', n: 10, dx: 0.5, spread: 0.85, every: 0.14, pattern: 'rand' }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.45, every: 1.0 },
+      { gap: 0.8, spawn: [{ t: 'grunt', n: 10, dx: 0.5, spread: 0.85, every: 0.14, pattern: 'rand' }] },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.45, every: 1.0 },
                           { t: 'shooter', n: 2, dx: 0.5, spread: 0.7, every: 0.6, delay: 1.5 }] },
-      { gap: 1.2, spawn: [{ t: 'weaver', n: 6, dx: 0.5, spread: 0.8, every: 0.25 },
+      { gap: 0.95, spawn: [{ t: 'weaver', n: 6, dx: 0.5, spread: 0.8, every: 0.25 },
                           { t: 'grunt', n: 6, dx: 0.5, spread: 0.6, every: 0.2, delay: 2.0, pattern: 'v' }] }
     ] },
   { name: 'NIVO 3', accent: '#ff7a00', waves: [
-      { gap: 1.0, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.8, every: 0.16, pattern: 'v' },
+      { gap: 0.8, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.8, every: 0.16, pattern: 'v' },
                           { t: 'weaver', n: 3, dx: 0.5, spread: 0.5, every: 0.4, delay: 1.5 }] },
-      { gap: 1.0, spawn: [{ t: 'shooter', n: 4, dx: 0.5, spread: 0.75, every: 0.45 }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.6, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'shooter', n: 4, dx: 0.5, spread: 0.75, every: 0.45 }] },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.6, every: 0.8 },
                           { t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.2, delay: 1.6, pattern: 'rand' }] },
-      { gap: 1.4, spawn: [{ t: 'weaver', n: 6, dx: 0.5, spread: 0.85, every: 0.22 },
+      { gap: 1.12, spawn: [{ t: 'weaver', n: 6, dx: 0.5, spread: 0.85, every: 0.22 },
                           { t: 'shooter', n: 3, dx: 0.5, spread: 0.6, every: 0.5, delay: 2.0 }] },
-      { boss: true, gap: 2.0 }
+      { boss: true, gap: 1.6 }
     ] },
   { name: 'NIVO 4', accent: '#8b5cff', waves: [
-      { gap: 1.2, spawn: [{ t: 'shieldbearer', n: 1, dx: 0.5, spread: 0, every: 0 },
+      { gap: 0.95, spawn: [{ t: 'shieldbearer', n: 1, dx: 0.5, spread: 0, every: 0 },
                           { t: 'grunt', n: 5, dx: 0.5, spread: 0.7, every: 0.25, delay: 1.2 }] },
-      { gap: 1.0, spawn: [{ t: 'weaver', n: 5, dx: 0.5, spread: 0.8, every: 0.26 },
+      { gap: 0.8, spawn: [{ t: 'weaver', n: 5, dx: 0.5, spread: 0.8, every: 0.26 },
                           { t: 'shieldbearer', n: 1, dx: 0.28, spread: 0, every: 0, delay: 1.4 }] },
-      { gap: 1.0, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
+      { gap: 0.8, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
                           { t: 'shooter', n: 2, dx: 0.5, spread: 0.7, every: 0.6, delay: 1.8 }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
                           { t: 'grunt', n: 8, dx: 0.5, spread: 0.85, every: 0.16, delay: 1.2, pattern: 'rand' }] },
-      { gap: 1.0, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.65, every: 1.0 },
+      { gap: 0.8, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.65, every: 1.0 },
                           { t: 'weaver', n: 4, dx: 0.5, spread: 0.7, every: 0.3, delay: 2.0 }] },
-      { gap: 1.4, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 1.12, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'shooter', n: 3, dx: 0.5, spread: 0.8, every: 0.5, delay: 2.2 },
                           { t: 'tank', n: 1, dx: 0.5, spread: 0, every: 0, delay: 3.5 }] }
     ] },
   { name: 'NIVO 5', accent: '#7cff00', waves: [
-      { gap: 1.2, spawn: [{ t: 'swarm', n: 12, dx: 0.5, spread: 0.7, every: 0.10 }] },
-      { gap: 1.0, spawn: [{ t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.18, pattern: 'v' },
+      { gap: 0.95, spawn: [{ t: 'swarm', n: 12, dx: 0.5, spread: 0.7, every: 0.10 }] },
+      { gap: 0.8, spawn: [{ t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.18, pattern: 'v' },
                           { t: 'swarm', n: 10, dx: 0.5, spread: 0.6, every: 0.09, delay: 1.6 }] },
-      { gap: 1.0, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.55, every: 0.9 },
+      { gap: 0.8, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.55, every: 0.9 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.85, every: 0.08, delay: 2.0 }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
                           { t: 'shooter', n: 3, dx: 0.5, spread: 0.8, every: 0.5, delay: 1.5 },
                           { t: 'swarm', n: 8, dx: 0.5, spread: 0.5, every: 0.09, delay: 3.0 }] },
-      { gap: 1.0, spawn: [{ t: 'swarm', n: 12, dx: 0.30, spread: 0.35, every: 0.08 },
+      { gap: 0.8, spawn: [{ t: 'swarm', n: 12, dx: 0.30, spread: 0.35, every: 0.08 },
                           { t: 'swarm', n: 12, dx: 0.70, spread: 0.35, every: 0.08, delay: 1.2 }] },
-      { gap: 1.4, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 1.12, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'weaver', n: 5, dx: 0.5, spread: 0.8, every: 0.28, delay: 1.8 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.9, every: 0.08, delay: 3.4 }] }
     ] },
   { name: 'NIVO 6', accent: '#ff3d00', waves: [
-      { gap: 1.2, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.85, every: 0.15, pattern: 'v' },
+      { gap: 0.95, spawn: [{ t: 'grunt', n: 8, dx: 0.5, spread: 0.85, every: 0.15, pattern: 'v' },
                           { t: 'weaver', n: 4, dx: 0.5, spread: 0.6, every: 0.3, delay: 1.6 }] },
-      { gap: 1.0, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
+      { gap: 0.8, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.8, every: 0.08, delay: 2.0 }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'shooter', n: 3, dx: 0.5, spread: 0.8, every: 0.5, delay: 1.8 }] },
-      { gap: 1.4, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.75, every: 0.8 },
+      { gap: 1.12, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.75, every: 0.8 },
                           { t: 'swarm', n: 12, dx: 0.30, spread: 0.35, every: 0.08, delay: 2.2 },
                           { t: 'swarm', n: 12, dx: 0.70, spread: 0.35, every: 0.08, delay: 3.4 }] },
-      { boss2: true, gap: 2.2 }
+      { boss2: true, gap: 1.75 }
     ] },
   { name: 'NIVO 7', accent: '#00d9a3', waves: [
-      { gap: 1.2, spawn: [{ t: 'miner', n: 1, dx: 0.5, spread: 0, every: 0 },
+      { gap: 0.95, spawn: [{ t: 'miner', n: 1, dx: 0.5, spread: 0, every: 0 },
                           { t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.2, delay: 1.4, pattern: 'v' }] },
-      { gap: 1.0, spawn: [{ t: 'miner', n: 2, dx: 0.5, spread: 0.6, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'miner', n: 2, dx: 0.5, spread: 0.6, every: 0.8 },
                           { t: 'weaver', n: 4, dx: 0.5, spread: 0.7, every: 0.3, delay: 1.6 }] },
-      { gap: 1.2, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
                           { t: 'miner', n: 2, dx: 0.5, spread: 0.75, every: 0.9, delay: 2.0 }] },
-      { gap: 1.0, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
+      { gap: 0.8, spawn: [{ t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.8, every: 0.08, delay: 1.8 }] },
-      { gap: 1.2, spawn: [{ t: 'miner', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
+      { gap: 0.95, spawn: [{ t: 'miner', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
                           { t: 'shooter', n: 3, dx: 0.5, spread: 0.7, every: 0.5, delay: 2.2 }] },
-      { gap: 1.4, spawn: [{ t: 'miner', n: 3, dx: 0.5, spread: 0.85, every: 0.6 },
+      { gap: 1.12, spawn: [{ t: 'miner', n: 3, dx: 0.5, spread: 0.85, every: 0.6 },
                           { t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.5, every: 0.9, delay: 2.0 },
                           { t: 'grunt', n: 8, dx: 0.5, spread: 0.9, every: 0.15, delay: 3.4, pattern: 'rand' }] }
     ] },
   { name: 'NIVO 8', accent: '#ff5c8a', waves: [
-      { gap: 1.2, spawn: [{ t: 'sniper', n: 2, dx: 0.5, spread: 0.5, every: 0.7 },
+      { gap: 0.95, spawn: [{ t: 'sniper', n: 2, dx: 0.5, spread: 0.5, every: 0.7 },
                           { t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.2, delay: 1.6, pattern: 'v' }] },
-      { gap: 1.0, spawn: [{ t: 'sniper', n: 2, dx: 0.5, spread: 0.75, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'sniper', n: 2, dx: 0.5, spread: 0.75, every: 0.8 },
                           { t: 'weaver', n: 5, dx: 0.5, spread: 0.8, every: 0.28, delay: 1.8 }] },
-      { gap: 1.2, spawn: [{ t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.6 },
+      { gap: 0.95, spawn: [{ t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.6 },
                           { t: 'miner', n: 2, dx: 0.5, spread: 0.6, every: 0.9, delay: 2.2 }] },
-      { gap: 1.0, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.65, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.65, every: 0.8 },
                           { t: 'sniper', n: 2, dx: 0.5, spread: 0.5, every: 0.8, delay: 2.0 }] },
-      { gap: 1.2, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 0.95, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.85, every: 0.08, delay: 2.4 }] },
-      { gap: 1.4, spawn: [{ t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.6 },
+      { gap: 1.12, spawn: [{ t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.6 },
                           { t: 'miner', n: 3, dx: 0.5, spread: 0.8, every: 0.7, delay: 2.0 },
                           { t: 'shooter', n: 3, dx: 0.5, spread: 0.7, every: 0.5, delay: 4.0 }] }
     ] },
   { name: 'NIVO 9', accent: '#c400ff', waves: [
-      { gap: 1.2, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 0.95, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.85, every: 0.08, delay: 2.0 }] },
-      { gap: 1.0, spawn: [{ t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
+      { gap: 0.8, spawn: [{ t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
                           { t: 'miner', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 2.2 }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 4, dx: 0.5, spread: 0.75, every: 0.7 },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 4, dx: 0.5, spread: 0.75, every: 0.7 },
                           { t: 'shooter', n: 4, dx: 0.5, spread: 0.85, every: 0.45, delay: 2.0 },
                           { t: 'weaver', n: 6, dx: 0.5, spread: 0.8, every: 0.25, delay: 4.0 }] },
-      { boss3: true, gap: 2.4 }
+      { boss3: true, gap: 1.92 }
     ] },
   { name: 'NIVO 10', accent: '#dfe9ff', waves: [
-      { gap: 1.2, spawn: [{ t: 'splitter', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'splitter', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
                           { t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.2, delay: 1.6, pattern: 'v' }] },
-      { gap: 1.0, spawn: [{ t: 'splitter', n: 3, dx: 0.5, spread: 0.7, every: 0.7 },
+      { gap: 0.8, spawn: [{ t: 'splitter', n: 3, dx: 0.5, spread: 0.7, every: 0.7 },
                           { t: 'shooter', n: 2, dx: 0.5, spread: 0.6, every: 0.6, delay: 2.0 }] },
-      { gap: 1.2, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
                           { t: 'splitter', n: 3, dx: 0.5, spread: 0.8, every: 0.6, delay: 2.2 }] },
-      { gap: 1.0, spawn: [{ t: 'sniper', n: 2, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'sniper', n: 2, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'miner', n: 2, dx: 0.5, spread: 0.6, every: 0.9, delay: 2.0 }] },
-      { gap: 1.2, spawn: [{ t: 'splitter', n: 4, dx: 0.5, spread: 0.85, every: 0.5 },
+      { gap: 0.95, spawn: [{ t: 'splitter', n: 4, dx: 0.5, spread: 0.85, every: 0.5 },
                           { t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9, delay: 2.4 }] },
-      { gap: 1.4, spawn: [{ t: 'splitter', n: 5, dx: 0.5, spread: 0.9, every: 0.45 },
+      { gap: 1.12, spawn: [{ t: 'splitter', n: 5, dx: 0.5, spread: 0.9, every: 0.45 },
                           { t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.5, every: 0.9, delay: 2.6 },
                           { t: 'sniper', n: 2, dx: 0.5, spread: 0.7, every: 0.7, delay: 4.2 }] }
     ] },
   { name: 'NIVO 11', accent: '#00ff6a', waves: [
-      { gap: 1.2, spawn: [{ t: 'healer', n: 1, dx: 0.5, spread: 0, every: 0 },
+      { gap: 0.95, spawn: [{ t: 'healer', n: 1, dx: 0.5, spread: 0, every: 0 },
                           { t: 'tank', n: 2, dx: 0.5, spread: 0.5, every: 0.9, delay: 1.4 }] },
-      { gap: 1.0, spawn: [{ t: 'healer', n: 1, dx: 0.3, spread: 0, every: 0 },
+      { gap: 0.8, spawn: [{ t: 'healer', n: 1, dx: 0.3, spread: 0, every: 0 },
                           { t: 'shieldbearer', n: 2, dx: 0.6, spread: 0.5, every: 0.9, delay: 1.6 }] },
-      { gap: 1.2, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
                           { t: 'shooter', n: 3, dx: 0.5, spread: 0.75, every: 0.5, delay: 2.0 }] },
-      { gap: 1.0, spawn: [{ t: 'healer', n: 1, dx: 0.5, spread: 0, every: 0 },
+      { gap: 0.8, spawn: [{ t: 'healer', n: 1, dx: 0.5, spread: 0, every: 0 },
                           { t: 'splitter', n: 4, dx: 0.5, spread: 0.8, every: 0.5, delay: 1.8 },
                           { t: 'miner', n: 2, dx: 0.5, spread: 0.6, every: 0.9, delay: 3.4 }] },
-      { gap: 1.2, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.7, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.7, every: 0.9 },
                           { t: 'tank', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 2.2 }] },
-      { gap: 1.4, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.75, every: 0.9 },
+      { gap: 1.12, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.75, every: 0.9 },
                           { t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 2.0 },
                           { t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.6, delay: 4.0 }] }
     ] },
   { name: 'NIVO 12', accent: '#ff8a00', waves: [
-      { gap: 1.2, spawn: [{ t: 'splitter', n: 4, dx: 0.5, spread: 0.85, every: 0.5 },
+      { gap: 0.95, spawn: [{ t: 'splitter', n: 4, dx: 0.5, spread: 0.85, every: 0.5 },
                           { t: 'healer', n: 1, dx: 0.5, spread: 0, every: 0, delay: 2.0 }] },
-      { gap: 1.0, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.6, delay: 2.2 }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 4, dx: 0.5, spread: 0.75, every: 0.7 },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 4, dx: 0.5, spread: 0.75, every: 0.7 },
                           { t: 'miner', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 2.0 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.85, every: 0.08, delay: 4.0 }] },
-      { boss4: true, gap: 2.4 }
+      { boss4: true, gap: 1.92 }
     ] },
   { name: 'NIVO 13', accent: '#ff2d2d', waves: [
-      { gap: 1.2, spawn: [{ t: 'charger', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'charger', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
                           { t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.2, delay: 1.6, pattern: 'v' }] },
-      { gap: 1.0, spawn: [{ t: 'charger', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'charger', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'weaver', n: 4, dx: 0.5, spread: 0.7, every: 0.3, delay: 2.0 }] },
-      { gap: 1.2, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'shieldbearer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
                           { t: 'charger', n: 3, dx: 0.5, spread: 0.8, every: 0.7, delay: 2.2 }] },
-      { gap: 1.0, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
+      { gap: 0.8, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
                           { t: 'tank', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 1.8 }] },
-      { gap: 1.2, spawn: [{ t: 'charger', n: 4, dx: 0.5, spread: 0.85, every: 0.6 },
+      { gap: 0.95, spawn: [{ t: 'charger', n: 4, dx: 0.5, spread: 0.85, every: 0.6 },
                           { t: 'sniper', n: 2, dx: 0.5, spread: 0.7, every: 0.8, delay: 2.4 }] },
-      { gap: 1.4, spawn: [{ t: 'charger', n: 4, dx: 0.5, spread: 0.9, every: 0.55 },
+      { gap: 1.12, spawn: [{ t: 'charger', n: 4, dx: 0.5, spread: 0.9, every: 0.55 },
                           { t: 'splitter', n: 4, dx: 0.5, spread: 0.8, every: 0.5, delay: 2.2 },
                           { t: 'miner', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 4.2 }] }
     ] },
   { name: 'NIVO 14', accent: '#b0b8c8', waves: [
-      { gap: 1.2, spawn: [{ t: 'mirror', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
+      { gap: 0.95, spawn: [{ t: 'mirror', n: 2, dx: 0.5, spread: 0.5, every: 0.9 },
                           { t: 'grunt', n: 6, dx: 0.5, spread: 0.8, every: 0.2, delay: 1.8, pattern: 'v' }] },
-      { gap: 1.0, spawn: [{ t: 'mirror', n: 2, dx: 0.5, spread: 0.7, every: 0.9 },
+      { gap: 0.8, spawn: [{ t: 'mirror', n: 2, dx: 0.5, spread: 0.7, every: 0.9 },
                           { t: 'charger', n: 3, dx: 0.5, spread: 0.7, every: 0.7, delay: 2.0 }] },
-      { gap: 1.2, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.8 },
+      { gap: 0.95, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.8 },
                           { t: 'healer', n: 1, dx: 0.5, spread: 0, every: 0, delay: 2.4 }] },
-      { gap: 1.0, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
+      { gap: 0.8, spawn: [{ t: 'tank', n: 3, dx: 0.5, spread: 0.7, every: 0.8 },
                           { t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.6, delay: 2.0 },
                           { t: 'mirror', n: 2, dx: 0.5, spread: 0.5, every: 0.9, delay: 4.0 }] },
-      { gap: 1.2, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.85, every: 0.7 },
+      { gap: 0.95, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.85, every: 0.7 },
                           { t: 'swarm', n: 12, dx: 0.5, spread: 0.85, every: 0.08, delay: 2.4 }] },
-      { gap: 1.4, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
+      { gap: 1.12, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
                           { t: 'charger', n: 4, dx: 0.5, spread: 0.9, every: 0.6, delay: 2.2 },
                           { t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 4.4 }] }
     ] },
   { name: 'NIVO 15', accent: '#ff0066', waves: [
-      { gap: 1.2, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.8 },
+      { gap: 0.95, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.8 },
                           { t: 'charger', n: 3, dx: 0.5, spread: 0.8, every: 0.7, delay: 2.2 }] },
-      { gap: 1.0, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
+      { gap: 0.8, spawn: [{ t: 'healer', n: 2, dx: 0.5, spread: 0.6, every: 0.9 },
                           { t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.75, every: 0.8, delay: 1.8 },
                           { t: 'sniper', n: 3, dx: 0.5, spread: 0.85, every: 0.6, delay: 4.0 }] },
-      { gap: 1.2, spawn: [{ t: 'tank', n: 4, dx: 0.5, spread: 0.8, every: 0.7 },
+      { gap: 0.95, spawn: [{ t: 'tank', n: 4, dx: 0.5, spread: 0.8, every: 0.7 },
                           { t: 'splitter', n: 4, dx: 0.5, spread: 0.85, every: 0.5, delay: 2.2 },
                           { t: 'miner', n: 3, dx: 0.5, spread: 0.7, every: 0.8, delay: 4.4 }] },
-      { boss5: true, gap: 2.6 }
+      { boss5: true, gap: 2.08 }
     ] },
 
   { name: 'NIVO 16', accent: '#ffb300', waves: [
-      { gap: 1.2, spawn: [{ t: 'bomber', n: 3, dx: 0.5, spread: 0.7, every: 0.8 }] },
-      { gap: 1.1, spawn: [{ t: 'bomber', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
+      { gap: 0.95, spawn: [{ t: 'bomber', n: 3, dx: 0.5, spread: 0.7, every: 0.8 }] },
+      { gap: 0.88, spawn: [{ t: 'bomber', n: 3, dx: 0.5, spread: 0.8, every: 0.7 },
                           { t: 'charger', n: 4, dx: 0.5, spread: 0.85, every: 0.55, delay: 2.2 }] },
-      { gap: 1.0, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.85, every: 0.7 },
+      { gap: 0.8, spawn: [{ t: 'mirror', n: 3, dx: 0.5, spread: 0.85, every: 0.7 },
                           { t: 'bomber', n: 2, dx: 0.5, spread: 0.6, every: 0.9, delay: 2.4 },
                           { t: 'swarm', n: 10, dx: 0.5, spread: 0.9, every: 0.14, delay: 4.2 }] },
-      { gap: 1.0, spawn: [{ t: 'splitter', n: 5, dx: 0.5, spread: 0.9, every: 0.45 },
+      { gap: 0.8, spawn: [{ t: 'splitter', n: 5, dx: 0.5, spread: 0.9, every: 0.45 },
                           { t: 'healer', n: 2, dx: 0.5, spread: 0.5, every: 0.9, delay: 2.0 },
                           { t: 'bomber', n: 3, dx: 0.5, spread: 0.8, every: 0.8, delay: 3.8 }] },
-      { gap: 1.2, spawn: [{ t: 'bomber', n: 4, dx: 0.5, spread: 0.85, every: 0.6 },
+      { gap: 0.95, spawn: [{ t: 'bomber', n: 4, dx: 0.5, spread: 0.85, every: 0.6 },
                           { t: 'sniper', n: 3, dx: 0.5, spread: 0.8, every: 0.65, delay: 2.6 },
                           { t: 'tank', n: 3, dx: 0.5, spread: 0.8, every: 0.8, delay: 4.6 }] }
     ] },
 
   { name: 'NIVO 17', accent: '#00ffc8', waves: [
-      { gap: 1.2, spawn: [{ t: 'phoenix', n: 4, dx: 0.5, spread: 0.8, every: 0.6 }] },
-      { gap: 1.0, spawn: [{ t: 'phoenix', n: 5, dx: 0.5, spread: 0.85, every: 0.5 },
+      { gap: 0.95, spawn: [{ t: 'phoenix', n: 4, dx: 0.5, spread: 0.8, every: 0.6 }] },
+      { gap: 0.8, spawn: [{ t: 'phoenix', n: 5, dx: 0.5, spread: 0.85, every: 0.5 },
                           { t: 'bomber', n: 2, dx: 0.5, spread: 0.6, every: 0.9, delay: 2.4 }] },
-      { gap: 1.1, spawn: [{ t: 'phoenix', n: 4, dx: 0.5, spread: 0.85, every: 0.55 },
+      { gap: 0.88, spawn: [{ t: 'phoenix', n: 4, dx: 0.5, spread: 0.85, every: 0.55 },
                           { t: 'healer', n: 3, dx: 0.5, spread: 0.6, every: 0.8, delay: 2.0 },
                           { t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.7, delay: 4.0 }] },
-      { gap: 1.0, spawn: [{ t: 'splitter', n: 5, dx: 0.5, spread: 0.9, every: 0.45 },
+      { gap: 0.8, spawn: [{ t: 'splitter', n: 5, dx: 0.5, spread: 0.9, every: 0.45 },
                           { t: 'phoenix', n: 4, dx: 0.5, spread: 0.85, every: 0.55, delay: 2.6 },
                           { t: 'miner', n: 3, dx: 0.5, spread: 0.8, every: 0.7, delay: 4.6 }] },
-      { gap: 1.2, spawn: [{ t: 'phoenix', n: 5, dx: 0.5, spread: 0.9, every: 0.5 },
+      { gap: 0.95, spawn: [{ t: 'phoenix', n: 5, dx: 0.5, spread: 0.9, every: 0.5 },
                           { t: 'charger', n: 4, dx: 0.5, spread: 0.85, every: 0.6, delay: 2.4 },
                           { t: 'shieldbearer', n: 3, dx: 0.5, spread: 0.8, every: 0.75, delay: 4.8 }] }
     ] },
 
   { name: 'NIVO 18', accent: '#ff3d6e', waves: [
-      { gap: 1.2, spawn: [{ t: 'phantom', n: 4, dx: 0.5, spread: 0.8, every: 0.6 }] },
-      { gap: 1.0, spawn: [{ t: 'phantom', n: 4, dx: 0.5, spread: 0.85, every: 0.55 },
+      { gap: 0.95, spawn: [{ t: 'phantom', n: 4, dx: 0.5, spread: 0.8, every: 0.6 }] },
+      { gap: 0.8, spawn: [{ t: 'phantom', n: 4, dx: 0.5, spread: 0.85, every: 0.55 },
                           { t: 'phoenix', n: 3, dx: 0.5, spread: 0.7, every: 0.7, delay: 2.4 }] },
-      { gap: 1.1, spawn: [{ t: 'phantom', n: 5, dx: 0.5, spread: 0.9, every: 0.5 },
+      { gap: 0.88, spawn: [{ t: 'phantom', n: 5, dx: 0.5, spread: 0.9, every: 0.5 },
                           { t: 'bomber', n: 3, dx: 0.5, spread: 0.8, every: 0.8, delay: 2.2 },
                           { t: 'sniper', n: 3, dx: 0.5, spread: 0.85, every: 0.65, delay: 4.4 }] },
-      { gap: 1.0, spawn: [{ t: 'phantom', n: 4, dx: 0.5, spread: 0.85, every: 0.55 },
+      { gap: 0.8, spawn: [{ t: 'phantom', n: 4, dx: 0.5, spread: 0.85, every: 0.55 },
                           { t: 'mirror', n: 3, dx: 0.5, spread: 0.8, every: 0.7, delay: 2.0 },
                           { t: 'tank', n: 4, dx: 0.5, spread: 0.85, every: 0.65, delay: 4.0 },
                           { t: 'healer', n: 2, dx: 0.5, spread: 0.5, every: 0.9, delay: 6.0 }] },
-      { boss6: true, gap: 2.8 }
+      { boss6: true, gap: 2.24 }
     ] }
 ];
 
@@ -2294,7 +2294,11 @@ function startLevel(n, d) {
   spentTotal = 0; playTime = 0; repairPause = 0;
   // tačno jedan nacrt po nivou i stepenu težine, i to samo ako ga tu još nisi dobio
   killCount = 0; bpTarget = -1; bpType = null; runBp = null;
-  dmgStage = 0; runDmg = []; dmgFlash = 0;
+  /* Brojač pragova se resetuje samo kad se kreće iz garaže. Kroz vezani niz
+     oklop se ne obnavlja, pa bi resetovanje značilo da se isti pragovi
+     okidaju iznova u svakoj misiji. */
+  if (chainCount === 0) { dmgStage = 0; runDmg = []; }
+  dmgFlash = 0;
   /* Kroz niz vezanih misija skupljeni nacrti se pamte do sletanja,
      da bi ih pregled na kraju prikazao sve, a ne samo poslednji. */
   if (chainCount === 0) { runBpAll = []; runHeavyAll = []; }
@@ -2418,7 +2422,7 @@ function spawnEnemy(type, x, y) {
     }
     if (type === 'boss4') {
       const rhp = Math.round(1700 * (1 + (level - 1) * 0.15) * dHp);
-      e.ring = { ang: Math.PI / 2, gap: 2.60, spd: 0.45, dir: 1, t: 4, hp: rhp, maxHp: rhp };
+      e.ring = { ang: Math.PI / 2, gap: 2.08, spd: 0.45, dir: 1, t: 4, hp: rhp, maxHp: rhp };
       e.ringHit = 0; e.bayCd = 6; e.dive = null; e.phase = 1;
     }
     if (type === 'boss3') {
@@ -2477,10 +2481,14 @@ function updateEnemies(dt) {
     e.t += dt;
 
     if (e.hacked) { updateHacked(e, dt); continue; }
+    /* Vreme u borbi — bočno kretanje kreće od nule po izlasku iz warpa,
+       inače protivnik na ulasku skoči u stranu. */
+    if (e.y >= 0 && e.bt === undefined) e.bt = 0;
+    if (e.bt !== undefined) e.bt += dt;
 
     /* Warp: kroz pojas iznad horizonta juri velikom brzinom i usporava do y=0,
        gde ulazi u borbu. Ostatak ponašanja se ne dira. */
-    if (inWarp(e.y) && !isBoss(e)) {
+    if (inWarp(e.y) && !isBoss(e) && e.type !== 'pod' && e.type !== 'twin') {
       const t = warpT(e.y);
       e.y += (4200 * (1 - t) + 260) * dt;
       if (e.y > 0) e.y = 0;
@@ -2490,7 +2498,7 @@ function updateEnemies(dt) {
 
     switch (e.type) {
       case 'grunt': e.y += e.speed * dt; break;
-      case 'weaver': e.y += e.speed * dt; e.x = e.baseX + Math.sin(e.t * 2.2) * e.amp; break;
+      case 'weaver': e.y += e.speed * dt; e.x = e.baseX + Math.sin((e.bt || 0) * 2.2) * e.amp * clamp((e.bt || 0) * 2.2, 0, 1); break;
       case 'shooter':
         if (e.y < e.hover) e.y += e.speed * dt;
         else {
@@ -2512,7 +2520,7 @@ function updateEnemies(dt) {
         break;
       case 'swarm':
         e.y += e.speed * dt;
-        e.x = e.baseX + Math.sin(e.t * 3.1 + (e.ph || 0)) * e.amp;
+        e.x = e.baseX + Math.sin((e.bt || 0) * 3.1 + (e.ph || 0)) * e.amp * clamp((e.bt || 0) * 2.2, 0, 1);
         break;
       case 'shieldbearer':
         if (e.y < e.hover) e.y += e.speed * dt;
@@ -3337,7 +3345,7 @@ function splitEnemy(e) {
 
 function updateBomber(e, dt) {
   if (e.y < e.hover) { e.y += e.speed * dt; return; }
-  e.x = e.baseX + Math.sin(e.t * 0.7) * 74;
+  e.x = e.baseX + Math.sin((e.bt || 0) * 0.7) * 74 * clamp((e.bt || 0) * 2.2, 0, 1);
   e.bombCd -= dt;
   if (e.bombCd <= 0) {
     e.bombCd = rnd(2.4, 3.6);
@@ -3357,7 +3365,7 @@ function updatePhoenix(e, dt) {
     }
     return;
   }
-  e.x = e.baseX + Math.sin(e.t * 2.4) * 62;
+  e.x = e.baseX + Math.sin((e.bt || 0) * 2.4) * 62 * clamp((e.bt || 0) * 2.2, 0, 1);
   e.y += e.speed * dt;
 }
 
@@ -3370,7 +3378,7 @@ function updatePhantom(e, dt) {
     e.ghost = 1.1; e.invuln = true;
     burst(e.x, e.y, e.color, 10, 150);
   }
-  e.x = e.baseX + Math.sin(e.t * 1.5) * 88;
+  e.x = e.baseX + Math.sin((e.bt || 0) * 1.5) * 88 * clamp((e.bt || 0) * 2.2, 0, 1);
   e.y += e.speed * dt;
   if (e.ghost <= 0) {
     e.fireCd -= dt;
@@ -4211,7 +4219,7 @@ function updateRockRun(dt) {
   for (let i = rocks.length - 1; i >= 0; i--) {
     const k = rocks[i];
     k.x += k.vx * dt; k.y += k.vy * dt; k.rot += k.spin * dt;
-    if (k.y - k.r > VH + 80 || k.x < -140 || k.x > VW + 140) { rocks.splice(i, 1); continue; }
+    if (rockOut(k)) { rocks.splice(i, 1); continue; }
     if (!player.alive || player.warp || player.inv > 0) continue;
     if (persp && k.y < 0) continue;
     const rr = k.r + player.r;
@@ -4224,6 +4232,14 @@ function updateRockRun(dt) {
       player.inv = 0.5;
     }
   }
+}
+
+/* U nagnutom prikazu se x sabija ka sredini, pa granica u koordinatama sveta
+   nije granica na ekranu — meteor bi nestao usred slike. Proverava se ekran. */
+function rockOut(k) {
+  if (k.y - k.r > VH + 80) return true;
+  const sx = pX(k.x, k.y), rr = k.r * pS(k.y);
+  return sx + rr < -20 || sx - rr > VW + 20;
 }
 
 function spawnRock(uMisiji) {
@@ -4276,7 +4292,7 @@ function updateTransit(dt) {
     k.x += k.vx * dt;
     k.y += k.vy * dt;
     k.rot += k.spin * dt;
-    if (k.y - k.r > VH + 80 || k.x < -140 || k.x > VW + 140) { rocks.splice(i, 1); continue; }
+    if (rockOut(k)) { rocks.splice(i, 1); continue; }
     if (!player.alive || player.warp || player.inv > 0) continue;
     if (persp && k.y < 0) continue;      // dok su u daljini, ne mogu da udare
     const rr = k.r + player.r;
