@@ -1,10 +1,10 @@
 'use strict';
 /* ============================================================
-   NEON SQUADRON  v1.67
-   Izbor nivoa pamti poslednji otključani; tačkice samo za novootključane delove
+   NEON SQUADRON  v1.68
+   Izbor težine takođe stoji na najvišoj otključanoj za dati nivo
    ============================================================ */
 
-const VER = 'v1.67';
+const VER = 'v1.68';
 const VW = 540;
 let VH = 960, SCALE = 1, DPR = 1, SAFE_TOP = 0, SAFE_BOT = 0;
 
@@ -1919,14 +1919,14 @@ function onButton(id) {
   if (id === 'play') { startLevel(selLevel, selDiff); return; }
   if (id === 'shop') { shopMode = 'menu'; sel = null; screen = 'shop'; return; }
   if (id === 'persp') { persp = !persp; save.persp = persp; writeSave(); showToast(persp ? 'NAGNUTI PRIKAZ' : 'RAVAN PRIKAZ'); return; }
-  if (id === 'levprev') { selLevel = Math.max(1, selLevel - 1); selDiff = clamp(selDiff, 1, maxDiff(selLevel)); return; }
-  if (id === 'levnext') { selLevel = Math.min(save.unlocked, selLevel + 1); selDiff = clamp(selDiff, 1, maxDiff(selLevel)); return; }
+  if (id === 'levprev') { selLevel = Math.max(1, selLevel - 1); selDiff = maxDiff(selLevel); return; }
+  if (id === 'levnext') { selLevel = Math.min(save.unlocked, selLevel + 1); selDiff = maxDiff(selLevel); return; }
   if (id === 'difprev') { selDiff = Math.max(1, selDiff - 1); return; }
   if (id === 'difnext') { selDiff = Math.min(maxDiff(selLevel), selDiff + 1); return; }
   if (id === 'resume') { screen = 'play'; return; }
   if (id === 'quit') {
-    screen = 'menu'; selLevel = clamp(save.unlocked, 1, LEVELS.length);
-    selDiff = clamp(diff, 1, maxDiff(selLevel)); return;
+    screen = 'menu'; selLevel = clamp(save.unlocked, 1, LEVELS.length); selDiff = maxDiff(selLevel);
+    selDiff = maxDiff(selLevel); return;
   }
   if (id === 'shopmain') { screen = 'menu'; return; }
   if (id.indexOf('slot_') === 0) {
@@ -1938,7 +1938,7 @@ function onButton(id) {
   if (id === 'slotgo') {
     setActiveSlot(slotIdx); loadSave(); PS = buildShip();
     selLevel = clamp(save.unlocked, 1, LEVELS.length);
-    selDiff = clamp(selDiff, 1, maxDiff(selLevel));
+    selDiff = maxDiff(selLevel);
     wipeAsk = -1; screen = 'menu';
     return;
   }
@@ -2018,7 +2018,7 @@ function onButton(id) {
   if (id === 'reset') {
     if (toast === 'RESET? DODIRNI PONOVO') {
       save = defaultSave(); writeSave(); PS = buildShip();
-      selLevel = 1; selDiff = 1; sel = null; showToast('PROGRES OBRISAN');
+      selLevel = 1; selDiff = maxDiff(selLevel); sel = null; showToast('PROGRES OBRISAN');
     } else showToast('RESET? DODIRNI PONOVO');
   }
 }
@@ -6511,7 +6511,7 @@ function frame(now) {
         finishRun();
         endMode = level >= LEVELS.length ? 'all' : 'clear';
         selLevel = clamp(save.unlocked, 1, LEVELS.length);
-        selDiff = clamp(diff, 1, maxDiff(selLevel));
+        selDiff = maxDiff(selLevel);
         sel = null; screen = 'levelend';
       }
     }
