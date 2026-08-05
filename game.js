@@ -1,10 +1,10 @@
 'use strict';
 /* ============================================================
-   NEON SQUADRON  v1.66
-   Ispravke: kvarovi kroz niz, glic weavera i tornjeva, meteori na ivicama, cene jezgra
+   NEON SQUADRON  v1.67
+   Izbor nivoa pamti poslednji otključani; tačkice samo za novootključane delove
    ============================================================ */
 
-const VER = 'v1.66';
+const VER = 'v1.67';
 const VW = 540;
 let VH = 960, SCALE = 1, DPR = 1, SAFE_TOP = 0, SAFE_BOT = 0;
 
@@ -706,6 +706,12 @@ const SHOP_TABS = [
   { id: 'stock', name: 'MAGACIN', color: '#ffd23f', list: null }
 ];
 function tabDef(id) { return SHOP_TABS.find(t => t.id === id) || SHOP_TABS[0]; }
+/* Tačkica u radionici znači: nacrti su skupljeni, a deo još nije nabavljen.
+   Nestaje čim ga kupiš — bez obzira da li ga možeš priuštiti. */
+function isNoviDeo(t) {
+  return bpUnlocked(t) && ownedTotal(t) === 0;
+}
+
 function tabOfType(t) {
   for (const td of SHOP_TABS) if (td.list && td.list.indexOf(t) >= 0) return td.id;
   return null;
@@ -1919,7 +1925,7 @@ function onButton(id) {
   if (id === 'difnext') { selDiff = Math.min(maxDiff(selLevel), selDiff + 1); return; }
   if (id === 'resume') { screen = 'play'; return; }
   if (id === 'quit') {
-    screen = 'menu'; selLevel = clamp(level, 1, save.unlocked);
+    screen = 'menu'; selLevel = clamp(save.unlocked, 1, LEVELS.length);
     selDiff = clamp(diff, 1, maxDiff(selLevel)); return;
   }
   if (id === 'shopmain') { screen = 'menu'; return; }
@@ -6095,9 +6101,11 @@ function drawShop() {
     // koliko u toj grupi ima nečeg novog za kupovinu
     let ready = 0;
     if (td.list) {
-      for (const t of td.list)
-        if (bpUnlocked(t) && ownedTotal(t) < (COMP[t].max || 1) && save.coins >= COMP[t].buy) ready++;
-    } else ready = Object.keys(save.stock).length;
+      for (const t of td.list) if (isNoviDeo(t)) ready++;
+    } else {
+      // magacin: tačkica samo ako u njemu stvarno nešto stoji
+      for (const t in save.stock) if (save.stock[t] && save.stock[t].length) { ready = 1; break; }
+    }
     btn('tab_' + td.id, tx2, ty2, tw, tabH, td.name,
         { size: 10, fill: on, color: on ? td.color : C.uiDim });
     if (ready > 0 && !on) {
@@ -6154,6 +6162,14 @@ function drawShop() {
     text(c.name, rightX + 30, y + (rowH - 4) / 2 - 7, 11, C.ui, 'left', 0, 700);
     text(it.sub, rightX + 30, y + (rowH - 4) / 2 + 8, 12, it.lock ? C.warn : (cur.list ? C.coin : C.uiDim), 'left', 0, 700);
     ctx.restore();
+    // otključano a još nenabavljeno — tačkica stoji do kupovine
+    if (cur.list && isNoviDeo(it.type)) {
+      ctx.save();
+      ctx.fillStyle = c.color;
+      ctx.shadowColor = c.color; ctx.shadowBlur = 9;
+      ctx.beginPath(); ctx.arc(rightX + rightW - 12, y + 12, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
   });
 
   // donji panel
