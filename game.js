@@ -1,10 +1,10 @@
 'use strict';
 /* ============================================================
-   NEON SQUADRON  v1.68
-   Izbor težine takođe stoji na najvišoj otključanoj za dati nivo
+   NEON SQUADRON  v1.69
+   Kovačnica: deo štete prolazi kroz ploče, ređe ih kuje, slabije su
    ============================================================ */
 
-const VER = 'v1.68';
+const VER = 'v1.69';
 const VW = 540;
 let VH = 960, SCALE = 1, DPR = 1, SAFE_TOP = 0, SAFE_BOT = 0;
 
@@ -720,8 +720,8 @@ function tabOfType(t) {
 const TAB = {
   modules:  [0, 5, 8, 11, 14, 16, 18, 20, 21, 22, 24],
   hull:     [0, 100, 130, 165, 205, 250, 300, 355, 415, 480, 550],
-  gen:      [0, 10, 14, 19, 25, 32, 40, 49, 59, 70, 82],
-  bat:      [0, 80, 130, 190, 250, 320, 400, 490, 590, 700, 820],
+  gen:      [0, 12, 18, 26, 36, 48, 63, 81, 103, 129, 160],
+  bat:      [0, 110, 185, 275, 380, 500, 640, 800, 980, 1180, 1400],
   speed:    [0, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00, 1.05, 1.10, 1.15, 1.20],
   dmg:      [0, 10, 14, 19, 25, 32, 40, 49, 59, 70, 82],
   interval: [0, 0.30, 0.27, 0.24, 0.21, 0.18, 0.165, 0.155, 0.145, 0.135, 0.125],
@@ -2264,7 +2264,7 @@ function startLevel(n, d) {
   bullets.length = ebullets.length = enemies.length = pickups.length = particles.length = rockets.length = mines.length = 0;
   blasts.length = 0; bolts.length = 0; rings.length = 0; holes.length = 0; emps.length = 0; sweeps.length = 0; rocks.length = 0; pulses.length = 0; antis.length = 0;
   drones.length = 0;
-  if (PS.hasDrone) for (let i = 0; i < PS.drN; i++) drones.push(mkDrone(i));
+
   waveIdx = 0; waveTimer = levelDef.waves[0].gap || 1; waveActive = false;
   pendingSpawns.length = 0;
   levelDone = false; doneTimer = 0; runCoins = 0;
@@ -2286,6 +2286,7 @@ function startLevel(n, d) {
   player.x = VW / 2; player.y = VH - SAFE_BOT - 210;   // brod stoji nešto dublje ka sredini
   player.tx = player.x; player.ty = player.y; player.vx = 0; player.vy = 0;
   /* Ulazak u misiju: brod dolazi iz warpa odozdo, iza donje ivice. */
+  if (PS.hasDrone) for (let i = 0; i < PS.drN; i++) drones.push(mkDrone(i));
   player.warp = 'in'; player.warpT = 0;
   player.warpFrom = VH + 120;
   player.warpTo = player.y;
@@ -2913,11 +2914,11 @@ function updateBoss6(e, dt) {
   // ploče kruže oko jezgra
   const zive = e.plates.filter(p => p.hp > 0);
   e.invuln = zive.length > 0;
-  const maxPloca = e.phase === 3 ? 5 : (e.phase === 2 ? 4 : 3);
+  const maxPloca = e.phase === 3 ? 3 : 2;
   e.forge -= dt;
   if (e.forge <= 0 && zive.length < maxPloca) {
-    e.forge = e.phase === 3 ? 2.4 : 3.4;
-    e.plates.push({ ang: rnd(0, Math.PI * 2), hp: Math.round(760 * dHp), maxHp: Math.round(760 * dHp) });
+    e.forge = e.phase === 3 ? 5.0 : 6.2;
+    e.plates.push({ ang: rnd(0, Math.PI * 2), hp: Math.round(480 * dHp), maxHp: Math.round(480 * dHp) });
     burst(e.x, e.y, e.color, 16, 200);
   }
   for (const p of e.plates) p.ang += (0.7 + e.phase * 0.24) * dt;
@@ -2955,6 +2956,20 @@ function updateBoss6(e, dt) {
 
 /* Ploče se crtaju kao obruč oko jezgra; svaka prima štetu zasebno. */
 function drawBoss6Plates(e) {
+  // kratak bljesak na jezgru kad šteta probije ploču — da se vidi da napreduješ
+  if (e.dmgAcc > 0) {
+    e.dmgAcc -= 40;
+    const ex0 = pX(e.x, e.y), ey0 = pY(e.y), es0 = pS(e.y);
+    ctx.save();
+    ctx.globalAlpha = 0.5;
+    ctx.strokeStyle = '#ffffff';
+    ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 12;
+    ctx.lineWidth = 2 * es0;
+    ctx.beginPath();
+    ctx.ellipse(ex0, ey0, (e.r + 6) * es0, (e.r + 6) * es0 * (persp ? 0.62 : 1), 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
   if (!e.plates || !e.plates.length) return;
   const R = e.r + 44;
   const ex = pX(e.x, e.y), ey = pY(e.y), es = pS(e.y), sq = persp ? 0.62 : 1;
@@ -3295,12 +3310,18 @@ function damageEnemy(e, dmg, hx, hy) {
       if (d < bd) { bd = d; best = p; }
     }
     if (best) {
-      best.hp -= dmg;
+      /* Deo štete uvek probije do jezgra — bez toga se čini da pucaš u prazno
+         dok god stoji ijedna ploča, a boss ih stalno kuje iznova. */
+      const probij = dmg * 0.50;
+      best.hp -= dmg * 0.50;
       e.flash = 0.06;
       if (best.hp <= 0) {
         burst(e.x + Math.cos(best.ang) * (e.r + 44), e.y + Math.sin(best.ang) * (e.r + 44), e.color, 22, 240);
         shake = Math.max(shake, 8);
       }
+      e.hp -= probij;
+      e.dmgAcc = (e.dmgAcc || 0) + probij;
+      if (e.hp <= 0) { const i2 = enemies.indexOf(e); if (i2 >= 0) killEnemy(i2, true); }
       return;
     }
   }
@@ -3415,7 +3436,9 @@ function killEnemy(idx, drops) {
   } else if (drops !== false) {
     killCount++;
     if (bpType && killCount === bpTarget) dropBlueprint(e.x, e.y, bpType);
-    const n = Math.min(e.coin, 5), per = Math.ceil(e.coin / n);
+    /* Nagrada raste sa nivoom — bez toga kasni apgrejdi ostaju nedostižni. */
+    const vred = Math.round(e.coin * (1 + (level - 1) * 0.20));
+    const n = Math.min(vred, 5), per = Math.ceil(vred / n);
     for (let i = 0; i < n; i++) dropCoin(e.x + rnd(-14, 14), e.y + rnd(-10, 10), per);
     if (Math.random() < 0.07) dropPowerup(e.x, e.y);
     if (Math.random() < 0.10) dropNrg(e.x, e.y);
@@ -3441,7 +3464,8 @@ function updatePickups(dt) {
     const p = pickups[i];
     p.t += dt;
     p.vy = Math.min(p.vy + 260 * dt, 150);
-    const pmag = p.kind === 'bp' ? Math.max(mag, 220) : mag;
+    // nacrt privlači slabije nego novčić, ali nikad slabije od osnovnog dometa
+    const pmag = p.kind === 'bp' ? Math.max(mag / 3, 220) : mag;
     if (p.kind !== 'pu' && pmag > 0 && player.alive) {
       const dx = player.x - p.x, dy = player.y - p.y, d = Math.hypot(dx, dy);
       if (d < pmag) {
@@ -4494,8 +4518,10 @@ function updateAntis(dt) {
     const a = antis[i];
     a.t += dt;
     if (a.phase === 'hold') {
-      a.y += a.vy * dt;
-      if (a.t > 0.9) { a.phase = 'go'; a.vy = -140; }
+      /* Formira se uz brod i prati ga, da se vidi odakle će poleteti. */
+      a.x += (player.x - a.x) * Math.min(1, 12 * dt);
+      a.y += ((player.y - 34) - a.y) * Math.min(1, 12 * dt);
+      if (a.t > 1.1) { a.phase = 'go'; a.vy = -140; }
     } else {
       a.vy -= 900 * dt;
       a.y += a.vy * dt;
@@ -4541,19 +4567,31 @@ function drawAntis() {
   for (const a of antis) {
     const sc = pS(a.y), qx = pX(a.x, a.y), qy = pY(a.y), sq = persp ? 0.62 : 1;
     const puls = 1 + 0.16 * Math.sin(a.t * 14);
-    ctx.globalAlpha = 0.16;
+    // postepeno se pojavljuje dok se formira
+    const vid = a.phase === 'hold' ? clamp(a.t / 0.55, 0, 1) : 1;
+    ctx.globalAlpha = 0.16 * vid;
     ctx.strokeStyle = COMP.anti.color;
     ctx.lineWidth = 1.5 * sc;
     ctx.beginPath();
     ctx.ellipse(qx, qy, a.rad * sc, a.rad * sc * sq, 0, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.globalAlpha = 0.9;
+    ctx.globalAlpha = 0.9 * vid;
     ctx.fillStyle = COMP.anti.color;
     ctx.shadowColor = COMP.anti.color; ctx.shadowBlur = 26;
     ctx.beginPath();
-    ctx.ellipse(qx, qy, a.r * puls * sc, a.r * puls * sc, 0, 0, Math.PI * 2);
+    ctx.ellipse(qx, qy, a.r * puls * sc * (0.35 + 0.65 * vid), a.r * puls * sc * (0.35 + 0.65 * vid), 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.globalAlpha = 1;
+    // pokazuje kuda će poleteti
+    if (a.phase === 'hold' && vid > 0.5) {
+      ctx.globalAlpha = 0.30 * vid;
+      ctx.strokeStyle = COMP.anti.color;
+      ctx.lineWidth = 2 * sc; ctx.setLineDash([8, 10]);
+      ctx.beginPath();
+      ctx.moveTo(qx, qy);
+      ctx.lineTo(pX(a.x, a.y - 260), pY(a.y - 260));
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    ctx.globalAlpha = vid;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.ellipse(qx, qy, a.r * 0.42 * puls * sc, a.r * 0.42 * puls * sc, 0, 0, Math.PI * 2);
@@ -5194,6 +5232,17 @@ function droneSlot(d) {
 
 function updateDrones(dt) {
   if (!PS.hasDrone || transit) return;
+  /* Dok brod ulazi u misiju, dron se drži uz njega i puni se —
+     bez ovoga bi odleteo u akciju pre nego što brod uopšte stigne. */
+  if (player.warp) {
+    for (const d of drones) {
+      d.x = player.x + (d.idx === 0 ? -20 : 20);
+      d.y = player.y + 16;
+      d.state = 'charging';
+      d.timer = Math.max(d.timer, 0.5);
+    }
+    return;
+  }
   for (const d of drones) {
     d.t += dt;
     d.timer -= dt;
