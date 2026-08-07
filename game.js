@@ -1,10 +1,10 @@
 'use strict';
 /* ============================================================
-   NEON SQUADRON  v1.69
-   Kovačnica: deo štete prolazi kroz ploče, ređe ih kuje, slabije su
+   NEON SQUADRON  v1.72
+   Tri nova teška oružja: usporenje vremena, crvotočina i fantomski trup
    ============================================================ */
 
-const VER = 'v1.69';
+const VER = 'v1.72';
 const VW = 540;
 let VH = 960, SCALE = 1, DPR = 1, SAFE_TOP = 0, SAFE_BOT = 0;
 
@@ -549,6 +549,20 @@ const COMP = {
                      TAB.boltDmg[lv] + ', ' + (TAB.boltHops[lv] - 1) + ' grananja, domet ' +
                      BOLT_REACH[lv] + ' px, na ' + fmt1(TAB.boltInt[lv]) + 's';
             } },
+  tslow:  { name: 'USPORENJE', letter: 'US', color: '#7ad9ff', buy: 880, max: 1, heavy: true,
+            up: [430, 880, 1720, 3000, 5300, 9200, 15800, 26800, 44000],
+            desc: 'usporava sve protivnike i njihovu paljbu', pw: 0, pwn: '',
+            stat: function (lv) {
+              return 'na ' + Math.round((1 - TAB.tsF[lv]) * 100) + '% brzine, ' + fmt1(TAB.tsDur[lv]) + 's';
+            } },
+  worm:   { name: 'CRVOTOČINA', letter: 'CV', color: '#ff9de0', buy: 960, max: 1, heavy: true,
+            up: [470, 960, 1870, 3280, 5800, 10000, 17200, 29200, 48000],
+            desc: 'brod proleti kroz protivnike i vrati se sa dna', pw: 0, pwn: '',
+            stat: function (lv) { return 'zahvat ' + TAB.wmW[lv] + ' px, ' + TAB.wmDmg[lv] + ' štete'; } },
+  ghost:  { name: 'FANTOM', letter: 'FA', color: '#d0d8ff', buy: 840, max: 1, heavy: true,
+            up: [410, 840, 1640, 2870, 5060, 8800, 15100, 25600, 42000],
+            desc: 'trup postaje neuništiv na kratko', pw: 0, pwn: '',
+            stat: function (lv) { return 'neuništiv ' + fmt1(TAB.ghDur[lv]) + 's'; } },
   chamber:{ name: 'KOMORA', letter: 'RK', color: '#7cff5a', buy: 420, max: 1, heavy: true,
             up: [220, 450, 880, 1500, 2700, 4700, 8200, 14000, 23000],
             desc: 'skuplja pozadinsku radijaciju za teško naoružanje', pw: 0,
@@ -648,9 +662,39 @@ const COMP = {
             note: 'ne troši struju — kretanje pod autopilotom je besplatno',
             stat: function (lv) { return 'domet ' + TAB.apR[lv] + ' px, izmiče se brzinom ' + TAB.apSpd[lv]; } }
 };
-const SHOP_LIST = ['turret', 'shield', 'bat', 'magnet', 'rocket', 'branch', 'robot', 'drone', 'laser', 'bolt', 'burst', 'shotgun', 'gforce', 'remote', 'auto', 'chamber', 'blackhole', 'emp', 'sweep', 'rail', 'hack', 'pulse', 'anti'];
+const SHOP_LIST = ['turret', 'shield', 'bat', 'magnet', 'rocket', 'branch', 'robot', 'drone', 'laser', 'bolt', 'burst', 'shotgun', 'gforce', 'remote', 'auto', 'chamber', 'blackhole', 'emp', 'sweep', 'rail', 'hack', 'pulse', 'anti', 'tslow', 'worm', 'ghost'];
 /* Teško naoružanje: nacrti za njega padaju samo sa bosova. */
-const HEAVY_LIST = ['chamber', 'blackhole', 'emp', 'sweep', 'rail'];
+const HEAVY_LIST = ['chamber', 'blackhole', 'emp', 'sweep', 'rail', 'tslow', 'worm', 'ghost'];
+
+/* Teško naoružanje se pokreće pokretom drugog prsta. Pokreta ima sedam,
+   a u pogonu sme biti najviše tri oružja — biraš koja i kojim pokretom. */
+const HEAVY_CAP = 3;
+const GESTS = [
+  { id: 'tap',    name: 'TAP',       kratko: 'TAP' },
+  { id: 'dbltap', name: 'DVA TAPA',  kratko: '2xTAP' },
+  { id: 'hold',   name: 'DRŽANJE',   kratko: 'DRŽI' },
+  { id: 'up',     name: 'PREVUCI ↑', kratko: '↑' },
+  { id: 'down',   name: 'PREVUCI ↓', kratko: '↓' },
+  { id: 'left',   name: 'PREVUCI ←', kratko: '←' },
+  { id: 'right',  name: 'PREVUCI →', kratko: '→' }
+];
+const HEAVY_WEAPONS = ['blackhole', 'emp', 'sweep', 'rail', 'tslow', 'worm', 'ghost'];
+const isHeavyWeapon = t => HEAVY_WEAPONS.indexOf(t) >= 0;
+
+function gestOf(t) { return (save.gest && save.gest[t]) || null; }
+function gestTaken(g, osim) {
+  for (const t of HEAVY_WEAPONS) if (t !== osim && gestOf(t) === g) return t;
+  return null;
+}
+function heavyActive() {
+  let n = 0;
+  for (const t of HEAVY_WEAPONS) if (gestOf(t) && ownedTotal(t) > 0) n++;
+  return n;
+}
+function weaponForGest(g) {
+  for (const t of HEAVY_WEAPONS) if (gestOf(t) === g && ownedTotal(t) > 0) return t;
+  return null;
+}
 
 /* Nacrti ne padaju za sve odjednom, nego za četiri komponente u isto vreme,
    redom kojim su uvođene u igru. Kad se jedna skupi, u prozor ulazi sledeća. */
@@ -662,7 +706,7 @@ const BP_ORDER = [
   'remote', 'burst', 'branch', 'hack',
   'pulse', 'anti'
 ];
-const BP_ORDER_HEAVY = ['chamber', 'emp', 'rail', 'sweep', 'blackhole'];
+const BP_ORDER_HEAVY = ['chamber', 'emp', 'rail', 'sweep', 'blackhole', 'tslow', 'ghost', 'worm'];
 
 function bpWindow(lista) {
   const w = [];
@@ -678,7 +722,8 @@ const isHeavy = t => !!(COMP[t] && COMP[t].heavy);
 /* Oružja se moraju uključiti, a koliko ih sme raditi zavisi od kopilota.
    Komora nije oružje — ona samo skuplja radijaciju. */
 const WEAPONS = ['turret', 'burst', 'rocket', 'branch', 'laser', 'bolt', 'shotgun',
-                 'drone', 'hack', 'pulse', 'anti', 'blackhole', 'emp', 'sweep', 'rail'];
+                 'drone', 'hack', 'pulse', 'anti', 'blackhole', 'emp', 'sweep', 'rail',
+                 'tslow', 'worm', 'ghost'];
 const isWeapon = t => WEAPONS.indexOf(t) >= 0;
 function weaponCap() { return 1 + 2 * bestLv('copilot'); }   // svaki nivo nosi dva oružja
 function activeCount() {
@@ -698,7 +743,7 @@ const SHOP_TABS = [
   { id: 'weap',  name: 'ORUŽJE',  color: '#00ff9d',
     list: ['turret', 'burst', 'rocket', 'branch', 'laser', 'pulse', 'bolt', 'shotgun', 'anti', 'drone', 'hack'] },
   { id: 'heavy', name: 'TEŠKO',   color: '#7cff5a',
-    list: ['chamber', 'blackhole', 'emp', 'sweep', 'rail'] },
+    list: ['chamber', 'blackhole', 'emp', 'sweep', 'rail', 'tslow', 'worm', 'ghost'] },
   { id: 'def',   name: 'ODBRANA', color: '#4d8dff',
     list: ['shield', 'robot', 'bat'] },
   { id: 'sys',   name: 'SISTEMI', color: '#9fe8ff',
@@ -710,6 +755,35 @@ function tabDef(id) { return SHOP_TABS.find(t => t.id === id) || SHOP_TABS[0]; }
    Nestaje čim ga kupiš — bez obzira da li ga možeš priuštiti. */
 function isNoviDeo(t) {
   return bpUnlocked(t) && ownedTotal(t) === 0;
+}
+
+/* Izbor pokreta za teško oružje — isti panel i kad se gleda iz prodavnice
+   i kad se gleda ugrađeni modul. */
+function crtajPokrete(t, px, py) {
+  if (!isHeavyWeapon(t) || ownedTotal(t) <= 0) return;
+  const c = COMP[t];
+  const trenutni = gestOf(t);
+  text('POKRET:', px, py + 6, 11, C.uiDim, 'left', 0, 700);
+  const gw = 54, gh = 26, po = 5;
+  for (let i = 0; i < GESTS.length; i++) {
+    const g = GESTS[i];
+    const kol = i % 4, red = Math.floor(i / 4);
+    const gx = px + kol * (gw + po);
+    const gy = py + 16 + red * (gh + po);
+    const zauzeo = gestTaken(g.id, t);
+    const izabran = trenutni === g.id;
+    btn('gest_' + t + '_' + g.id, gx, gy, gw, gh, g.kratko,
+        { size: 11, fill: izabran, color: izabran ? c.color : (zauzeo ? C.uiDim : C.ui),
+          enabled: !zauzeo });
+  }
+  const puno = heavyActive() >= HEAVY_CAP && !trenutni;
+  if (trenutni)
+    btn('gest_' + t + '_none', px + 3 * (gw + po), py + 16 + (gh + po), gw, gh, 'SKINI',
+        { size: 10, color: C.warn });
+  text(trenutni ? ('u pogonu ' + heavyActive() + '/' + HEAVY_CAP)
+                : (puno ? ('popunjeno ' + heavyActive() + '/' + HEAVY_CAP) : 'nije u pogonu'),
+       px, py + 16 + 2 * (gh + po) + 8, 10,
+       trenutni ? C.ok : (puno ? C.warn : C.uiDim), 'left', 0, 600);
 }
 
 function tabOfType(t) {
@@ -759,6 +833,11 @@ const TAB = {
   rlN:      [0, 14, 16, 18, 20, 23, 26, 29, 32, 36, 40],
   rlDur:    [0, 1.4, 1.45, 1.5, 1.55, 1.6, 1.65, 1.7, 1.75, 1.8, 1.9],
   empRad:   [0, 520, 590, 660, 730, 810, 890, 970, 1060, 1150, 1250],
+  tsF:      [0, 0.62, 0.57, 0.52, 0.47, 0.42, 0.37, 0.32, 0.28, 0.24, 0.20],
+  tsDur:    [0, 3.0, 3.4, 3.8, 4.3, 4.8, 5.4, 6.0, 6.7, 7.4, 8.2],
+  wmW:      [0, 70, 84, 99, 115, 132, 150, 170, 192, 216, 245],
+  wmDmg:    [0, 620, 790, 1000, 1250, 1550, 1900, 2320, 2820, 3400, 4100],
+  ghDur:    [0, 2.4, 2.8, 3.2, 3.7, 4.2, 4.8, 5.4, 6.1, 6.9, 7.8],
   plDmg:    [0, 22, 29, 37, 47, 59, 73, 90, 110, 134, 162],
   plN:      [0, 3, 3, 4, 4, 5, 5, 6, 6, 7, 8],
   plArc:    [0, 45, 80, 115, 150, 185, 220, 255, 290, 325, 360],
@@ -924,7 +1003,7 @@ function defaultSave() {
   const l = new Array(MAX_SLOTS).fill(0);
   g[9] = 'cpu'; g[5] = 'gen'; g[13] = 'motor'; g[8] = 'turret'; g[10] = 'copilot';
   l[9] = 1; l[5] = 1; l[13] = 1; l[8] = 1; l[10] = 1;
-  return { coins: 0, unlocked: 1, slots: 5, diff: {}, persp: false, grid: g, lv: l, stock: {}, bp: {}, bpDone: {}, bpHeavyDone: {}, dmg: {}, on: {} };
+  return { coins: 0, unlocked: 1, slots: 5, diff: {}, persp: false, grid: g, lv: l, stock: {}, bp: {}, bpDone: {}, bpHeavyDone: {}, dmg: {}, on: {}, gest: {} };
 }
 let save = defaultSave();
 
@@ -991,8 +1070,22 @@ function loadSave() {
       if (d.bpHeavyDone && typeof d.bpHeavyDone === 'object') s.bpHeavyDone = d.bpHeavyDone;
       if (d.dmg && typeof d.dmg === 'object') s.dmg = d.dmg;
       if (d.on && typeof d.on === 'object') s.on = d.on;
-
       else s.on = {};
+
+      if (d.gest && typeof d.gest === 'object') s.gest = d.gest;
+      else {
+        /* Stariji save nije poznavao dodelu pokreta — zadrži one koji su
+           do sada bili fiksni, da se ništa ne izgubi. */
+        s.gest = {};
+        const stari = { blackhole: 'tap', emp: 'up', sweep: 'right', rail: 'left' };
+        let ng = 0;
+        for (const t of HEAVY_WEAPONS) {
+          let ima = 0;
+          for (let i = 0; i < MAX_SLOTS; i++) if (s.grid[i] === t) ima++;
+          if (s.stock && s.stock[t] && s.stock[t].length) ima++;
+          if (ima > 0 && ng < HEAVY_CAP) { s.gest[t] = stari[t]; ng++; }
+        }
+      }
 
       /* Kopilot je deo jezgra. Brod koji ga nema dobija ga odmah, i to na nivou
          koji pokriva sva oružja koja su do sada radila — ograničenje ne sme
@@ -1161,6 +1254,12 @@ function buildShip() {
   s.plArc = TAB.plArc[pll] * Math.PI / 180; s.plInt = TAB.plInt[pll];
   const aml = bestLv('anti');   s.hasAnti = aml > 0;
   s.amDmg = TAB.amDmg[aml]; s.amRad = TAB.amRad[aml]; s.amInt = TAB.amInt[aml];
+  const tsl = bestLv('tslow');  s.hasTslow = tsl > 0;
+  s.tsF = TAB.tsF[tsl]; s.tsDur = TAB.tsDur[tsl];
+  const wml = bestLv('worm');   s.hasWorm = wml > 0;
+  s.wmW = TAB.wmW[wml]; s.wmDmg = TAB.wmDmg[wml];
+  const ghl = bestLv('ghost');  s.hasGhost = ghl > 0;
+  s.ghDur = TAB.ghDur[ghl];
   const hkl = bestLv('hack');   s.hasHack = hkl > 0;
   s.hkInt = TAB.hkInt[hkl]; s.hkPow = TAB.hkPow[hkl];
   const sgl = bestLv('shotgun'); s.hasSg = sgl > 0;
@@ -1466,6 +1565,11 @@ let heavyBp = null, runHeavyBp = null;
 let runBpAll = [], runHeavyAll = [];   // svi nacrti kroz niz vezanih misija
 let dmgStage = 0, runDmg = [], dmgFlash = 0;
 
+/* Tri teška oružja koja ne pucaju nego menjaju sam tok borbe. */
+let slowT = 0, slowF = 1;          // usporenje vremena
+let wormT = 0, wormW = 0, wormDmg = 0, wormHit = [];   // crvotočina
+let ghostT = 0;                    // fantomski trup
+
 /* Prelaz između misija: umesto sletanja igrač može da proleti kroz
    meteorsko polje i uđe u sledeću misiju bez svraćanja u radionicu. */
 let askExit = 0;        // odbrojavanje dok stoji pitanje sleteti/nastaviti
@@ -1730,6 +1834,7 @@ cv.addEventListener('pointerdown', function (e) {
        inače bi prevlačenje pomerilo brod umesto da opali. */
     if (dragId !== null && gid === null) {
       gid = e.pointerId; gx0 = p.x; gy0 = p.y; gMoved = 0;
+      gDown = performance.now(); gHeld = false;
       return;
     }
     // prst mora da bude dovoljno blizu broda — daljinski povećava taj domet
@@ -1794,20 +1899,45 @@ cv.addEventListener('pointermove', function (e) {
 }, { passive: false });
 
 const GESTURE_MIN = 60;      // ispod ovoga je tap, iznad je prevlačenje
+const HOLD_MS = 380;         // koliko drugi prst mora stajati da bi bilo držanje
+const DBL_MS = 280;          // razmak u kom drugi tap postaje dvostruki
+
+let gDown = 0;               // kad je drugi prst spušten
+let gHeld = false;           // je li držanje već okinuto
+let tapWait = 0, tapX = 0, tapY = 0;   // čeka se drugi tap
+
+/* Držanje se okida dok je prst još dole, a običan tap tek pošto prođe
+   vreme za dvostruki — inače se ta dva ne bi mogla razlikovati. */
+function updateGestures(dt) {
+  if (gid !== null && !gHeld && gMoved < GESTURE_MIN && performance.now() - gDown > HOLD_MS) {
+    gHeld = true;
+    heavyFire('hold', gx0, gy0);
+  }
+  if (tapWait > 0) {
+    tapWait -= dt;
+    if (tapWait <= 0) heavyFire('tap', tapX, tapY);
+  }
+}
 
 function endPointer(e) {
   if (screen === 'shop' && sdrag && sdrag.id === e.pointerId) { shopUp(toVirt(e)); return; }
   if (e.pointerId === gid) {
     const p = toVirt(e);
     const dx = p.x - gx0, dy = p.y - gy0;
-    gid = null;
-    if (screen !== 'play' || !player.alive || player.warp) return;
-    if (gMoved < GESTURE_MIN) { heavyFire('tap', gx0, gy0); return; }
-    if (Math.abs(dy) > Math.abs(dx)) { if (dy < 0) heavyFire('up', gx0, gy0); }
+    const drzano = gHeld;
+    gid = null; gHeld = false;
+    if (screen !== 'play' || !player.alive || player.warp) { tapWait = 0; return; }
+    if (drzano) return;                       // držanje je već odradilo svoje
+    if (gMoved < GESTURE_MIN) {
+      if (tapWait > 0) { tapWait = 0; heavyFire('dbltap', gx0, gy0); }
+      else { tapWait = DBL_MS / 1000; tapX = gx0; tapY = gy0; }
+      return;
+    }
+    if (Math.abs(dy) > Math.abs(dx)) heavyFire(dy < 0 ? 'up' : 'down', gx0, gy0);
     else heavyFire(dx > 0 ? 'right' : 'left', gx0, gy0);
     return;
   }
-  if (e.pointerId === dragId) { dragId = null; firing = false; gid = null; }
+  if (e.pointerId === dragId) { dragId = null; firing = false; gid = null; gHeld = false; tapWait = 0; }
 }
 cv.addEventListener('pointerup', endPointer);
 cv.addEventListener('pointercancel', endPointer);
@@ -1827,11 +1957,13 @@ function xLimits(y) {
   return [VW / 2 - half, VW / 2 + half];
 }
 function clampPlayer() {
+  if (wormT > 0) return;        // kroz crvotočinu brod prolazi i van igrališta
   player.y = clamp(player.y, SAFE_TOP + 78, VH - SAFE_BOT - 20);
   const L = xLimits(player.y);
   player.x = clamp(player.x, L[0], L[1]);
 }
 function clampTarget() {
+  if (wormT > 0) return;
   player.ty = clamp(player.ty, SAFE_TOP + 78, VH - SAFE_BOT - 20);
   const L = xLimits(player.ty);
   player.tx = clamp(player.tx, L[0], L[1]);
@@ -1860,6 +1992,7 @@ function updateMovement(dt) {
     player.x += player.vx * h;
     player.y += player.vy * h;
   }
+  if (wormT > 0) return;
   const by = clamp(player.y, SAFE_TOP + 78, VH - SAFE_BOT - 20);
   if (by !== player.y) { player.y = by; player.vy = 0; }
   const L = xLimits(player.y);
@@ -1980,6 +2113,27 @@ function onButton(id) {
   if (id === 'buy') { doBuy(); return; }
   if (id === 'levelup') { doLevelUp(); return; }
   if (id === 'store') { doStore(); return; }
+  if (id.indexOf('gest_') === 0) {
+    const ost = id.slice(5);
+    const p2 = ost.lastIndexOf('_');
+    const t2 = ost.slice(0, p2), g2 = ost.slice(p2 + 1);
+    if (!isHeavyWeapon(t2)) return;
+    if (!save.gest) save.gest = {};
+    if (g2 === 'none') {
+      delete save.gest[t2];
+      showToast(COMP[t2].name + ' SKINUT SA POKRETA');
+      after(); return;
+    }
+    if (gestTaken(g2, t2)) { showToast('POKRET JE VEĆ ZAUZET'); return; }
+    if (!gestOf(t2) && heavyActive() >= HEAVY_CAP) {
+      showToast('NAJVIŠE ' + HEAVY_CAP + ' TEŠKA ORUŽJA U POGONU');
+      return;
+    }
+    save.gest[t2] = g2;
+    const gn = GESTS.find(x => x.id === g2);
+    showToast(COMP[t2].name + ' NA ' + (gn ? gn.name : g2));
+    after(); return;
+  }
   if (id === 'sell') {
     if (!sel || sel.kind !== 'stock') return;
     const a = save.stock[sel.type];
@@ -2312,6 +2466,7 @@ function startLevel(n, d) {
   runBp = null; runHeavyBp = null;
   askExit = 0;
   levelCommitted = false;
+  slowT = 0; slowF = 1; wormT = 0; wormHit = []; ghostT = 0;
   // 2-3 grupe meteora po misiji, prva ne odmah na početku
   rockRuns = rndi(2, 3);
   rockRunCd = rnd(8, 13);
@@ -3772,6 +3927,7 @@ function fire(dt) {
 }
 
 function hurtPlayer(dmg) {
+  if (ghostT > 0) return;          // fantomski trup ne prima štetu
   if (player.inv > 0 || !player.alive) return;
   player.inv = 0.7;
   if (PS.hasRobot) repairPause = PS.repDelay;
@@ -3823,6 +3979,7 @@ function checkModuleDamage() {
 }
 
 function updateBullets(dt) {
+  const edt = dt * slowF;
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     b.x += b.vx * dt; b.y += b.vy * dt;
@@ -3863,7 +4020,7 @@ function updateBullets(dt) {
     const b = ebullets[i];
     if (b.dead) { ebullets.splice(i, 1); continue; }
     if (b.bomb !== undefined) {
-      b.bomb -= dt;
+      b.bomb -= edt;
       if (b.bomb <= 0) {
         // kasetna bomba: prsne u snop krhotina
         for (let k = 0; k < 7; k++) {
@@ -3877,7 +4034,7 @@ function updateBullets(dt) {
       }
     }
     const ox = b.x, oy = b.y;
-    b.x += b.vx * dt; b.y += b.vy * dt;
+    b.x += b.vx * edt; b.y += b.vy * edt;
     if (player.alive && player.inv <= 0) {
       const rr = b.r + player.r;
       // provera po celoj putanji — brzi metak ne sme da preskoci brod izmedju frejmova
@@ -4028,31 +4185,163 @@ function drawRockets() {
    TEŠKO NAORUŽANJE — pokreće se drugim prstom, troši radijaciju.
    ============================================================ */
 
+/* ============================================================
+   USPORENJE VREMENA — protivnici, njihova paljba i mine idu sporije,
+   dok se brod i njegovo oružje kreću normalno.
+   ============================================================ */
+function updateSlow(dt) {
+  if (slowT > 0) {
+    slowT -= dt;
+    if (slowT <= 0) { slowT = 0; slowF = 1; showToast('VREME NORMALNO'); }
+  }
+}
+
+function drawSlowVeil() {
+  if (slowT <= 0) return;
+  const a = clamp(slowT / 0.6, 0, 1) * 0.13;
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.fillStyle = COMP.tslow.color;
+  ctx.fillRect(0, 0, VW, VH);
+  ctx.restore();
+  ctx.save();
+  ctx.globalAlpha = 0.5;
+  text('USPORENO  ' + fmt1(slowT) + 's', VW / 2, SAFE_TOP + VH * 0.20, 13, COMP.tslow.color, 'center', 10, 700);
+  ctx.restore();
+}
+
+/* ============================================================
+   CRVOTOČINA — brod se zaleti pravo naviše i melje sve kroz šta prođe,
+   pa izroni sa dna ekrana. Bosovi se ne mogu pregaziti.
+   ============================================================ */
+function fireWorm() {
+  wormT = 0.62;
+  wormW = PS.wmW;
+  wormDmg = PS.wmDmg;
+  wormHit = [];
+  player.inv = Math.max(player.inv, 0.9);
+  shake = Math.max(shake, 16);
+  flash = 0.3; flashColor = COMP.worm.color;
+  return true;
+}
+
+function updateWorm(dt) {
+  if (wormT <= 0) return;
+  wormT -= dt;
+  const brzina = 3400;
+  player.y -= brzina * dt;
+  player.ty = player.y;
+  player.tx = player.x;
+
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    if (isBoss(e) || e.type === 'pod' || e.type === 'twin') continue;
+    if (e.down || e.hide || warpSafe(e) || wormHit.indexOf(e) >= 0) continue;
+    if (Math.abs(e.x - player.x) > wormW / 2 + e.r) continue;
+    if (Math.abs(e.y - player.y) > 120) continue;
+    wormHit.push(e);
+    damageEnemy(e, wormDmg, e.x, e.y);
+    burst(e.x, e.y, COMP.worm.color, 16, 220);
+  }
+
+  for (let i = 0; i < 3; i++)
+    particles.push({ x: player.x + rnd(-wormW / 2, wormW / 2), y: player.y + rnd(0, 90),
+                     vx: rnd(-30, 30), vy: rnd(180, 340), life: 0.4, max: 0.5,
+                     color: COMP.worm.color, size: rnd(2, 4) });
+
+  if (player.y < -60) {
+    // izronio kroz vrh — vraća se sa dna
+    player.y = VH - SAFE_BOT - 60;
+    player.ty = player.y;
+    player.vx = 0; player.vy = 0;
+    wormT = 0;
+    burst(player.x, player.y, COMP.worm.color, 26, 260);
+    rings.push({ x: player.x, y: player.y, r: wormW, t: 0, dur: 0.4, color: COMP.worm.color });
+    clampPlayer(); clampTarget();
+  }
+}
+
+function drawWorm() {
+  if (wormT <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = COMP.worm.color;
+  const x0 = pX(player.x - wormW / 2, player.y), x1 = pX(player.x + wormW / 2, player.y);
+  ctx.fillRect(Math.min(x0, x1), 0, Math.abs(x1 - x0), pY(player.y));
+  ctx.restore();
+}
+
+/* ============================================================
+   FANTOMSKI TRUP — brod na kratko postaje neuništiv.
+   ============================================================ */
+function fireGhost() {
+  ghostT = PS.ghDur;
+  burst(player.x, player.y, COMP.ghost.color, 22, 210);
+  rings.push({ x: player.x, y: player.y, r: 60, t: 0, dur: 0.45, color: COMP.ghost.color });
+  return true;
+}
+
+function updateGhost(dt) {
+  if (ghostT <= 0) return;
+  ghostT -= dt;
+  if (ghostT <= 0) { ghostT = 0; showToast('TRUP PONOVO ČVRST'); return; }
+  if (Math.random() < 0.4)
+    particles.push({ x: player.x + rnd(-16, 16), y: player.y + rnd(-16, 16), vx: rnd(-20, 20),
+                     vy: rnd(-10, 40), life: 0.4, max: 0.5, color: COMP.ghost.color, size: rnd(1.5, 3) });
+}
+
+function drawGhostRing() {
+  if (ghostT <= 0) return;
+  const ex = pX(player.x, player.y), ey = pY(player.y), es = pS(player.y);
+  ctx.save();
+  ctx.globalAlpha = 0.35 + 0.25 * Math.abs(Math.sin(performance.now() / 130));
+  ctx.strokeStyle = COMP.ghost.color;
+  ctx.shadowColor = COMP.ghost.color; ctx.shadowBlur = 16;
+  ctx.lineWidth = 2.5 * es;
+  ctx.setLineDash([9, 7]);
+  ctx.beginPath();
+  ctx.ellipse(ex, ey, 34 * es, 34 * es * (persp ? 0.62 : 1), 0, 0, Math.PI * 2);
+  ctx.stroke(); ctx.setLineDash([]);
+  ctx.restore();
+  text('FANTOM  ' + fmt1(ghostT) + 's', VW / 2, SAFE_TOP + VH * 0.20, 13, COMP.ghost.color, 'center', 10, 700);
+}
+
 function heavyFire(gest, gxx, gyy) {
   if (transit) { showToast('ORUŽJA SU UGAŠENA U POLJU'); return; }
   if (rad < RAD_PER_SHOT) {
     showToast(PS.hasChamber ? 'RADIJACIJA: ' + Math.floor(rad / RAD_PER_SHOT * 100) + '%' : 'TREBA TI KOMORA');
     return;
   }
+  const tip = weaponForGest(gest);
+  if (!tip) return;                    // tom pokretu ništa nije dodeljeno
   let opalio = false;
-  if (gest === 'tap' && PS.hasBH) {
+  if (tip === 'blackhole' && PS.hasBH) {
     holes.push({
       x: clamp(gxx, 60, VW - 60), y: clamp(pInvY(gyy), 60, VH - 120),
       r: PS.bhRad, dmg: PS.bhDmg, life: PS.bhDur, max: PS.bhDur, t: 0
     });
     shake = Math.max(shake, 14); flash = 0.25; flashColor = COMP.blackhole.color;
     opalio = true;
-  } else if (gest === 'right' && PS.hasSweep) {
+  } else if (tip === 'sweep' && PS.hasSweep) {
     sweeps.push({ kind: 'sweep', t: 0, dur: PS.swDur, dmg: PS.swDmg, w: PS.swW,
                   a0: -Math.PI * 0.86, a1: -Math.PI * 0.14, next: 0 });
     shake = Math.max(shake, 10); flash = 0.22; flashColor = COMP.sweep.color;
     opalio = true;
-  } else if (gest === 'left' && PS.hasRail) {
+  } else if (tip === 'rail' && PS.hasRail) {
     sweeps.push({ kind: 'rail', t: 0, dur: PS.rlDur, dmg: PS.rlDmg, n: PS.rlN,
                   a0: -Math.PI * 0.14, a1: -Math.PI * 0.86, next: 0, fired: 0 });
     shake = Math.max(shake, 12); flash = 0.22; flashColor = COMP.rail.color;
     opalio = true;
-  } else if (gest === 'up' && PS.hasEmp) {
+  } else if (tip === 'tslow' && PS.hasTslow) {
+    slowT = PS.tsDur; slowF = PS.tsF;
+    flash = 0.2; flashColor = COMP.tslow.color;
+    showToast('VREME USPORENO');
+    opalio = true;
+  } else if (tip === 'worm' && PS.hasWorm) {
+    if (wormT <= 0) opalio = fireWorm();
+  } else if (tip === 'ghost' && PS.hasGhost) {
+    opalio = fireGhost();
+  } else if (tip === 'emp' && PS.hasEmp) {
     emps.push({
       x: player.x, y: player.y, r: 20, rMax: PS.empRad,
       dmg: PS.empDmg, t: 0, dur: 0.55, hit: []
@@ -6337,6 +6626,7 @@ function drawPanel(y, h, s) {
     const canBuy = ownedTotal(t) < (c.max || 1) && save.coins >= c.buy;
     btn('buy', bx - 140, y + 12, 140, 40, 'KUPI ' + fmt(c.buy), { size: 15, fill: canBuy, color: C.coin, enabled: canBuy });
     if (ownedTotal(t) >= (c.max || 1)) text('imaš maksimum (' + (c.max || 1) + ')', bx, y + 60, 11, C.uiDim, 'right', 0, 600);
+    crtajPokrete(t, 16 + pad, y + 8);
     return;
   }
 
@@ -6366,6 +6656,7 @@ function drawPanel(y, h, s) {
     if (off2 && !mozeUkljuciti)
       text('kopilot pun (' + activeCount() + '/' + weaponCap() + ')', bx - 202, y + 62, 10, C.warn, 'center', 0, 600);
   }
+  crtajPokrete(t, 16 + pad, y + 8);
   if (sel.kind === 'slot' && canRemove(t) && save.grid[sel.idx] === t)
     text('prevuci deo na listu da ga skloniš u magacin', 16 + pad, y + h - 22, 10, C.uiDim, 'left', 0, 600);
   if (sel.kind === 'stock')
@@ -6515,14 +6806,17 @@ function frame(now) {
   if (screen === 'play') {
     updateStars(dt); updateBackdrop(dt);
     if (transit) { updateTransit(dt); }
-    else { updateWaves(dt); updateEnemies(dt); updateRockRun(dt); }
-    updatePlayer(dt); autopilot(dt); updateMovement(dt); updateLaser(dt); updateDrones(dt); updateBullets(dt); updateRockets(dt); updateMines(dt); updateBlasts(dt); updateRings(dt); updateBolts(dt); updateHoles(dt); updateEmp(dt); updateSweeps(dt); updatePulses(dt); updateAntis(dt); updatePickups(dt); updateParticles(dt);
+    else {
+      const edt = dt * slowF;
+      updateWaves(edt); updateEnemies(edt); updateRockRun(edt);
+    }
+    updatePlayer(dt); autopilot(dt); updateMovement(dt); updateLaser(dt); updateDrones(dt); updateBullets(dt); updateRockets(dt); updateMines(dt); updateBlasts(dt); updateRings(dt); updateBolts(dt); updateHoles(dt); updateEmp(dt); updateSweeps(dt); updatePulses(dt); updateAntis(dt); updateGestures(dt); updateSlow(dt); updateWorm(dt); updateGhost(dt); updatePickups(dt); updateParticles(dt);
     if (shake > 0) shake = Math.max(0, shake - 40 * dt);
     if (flash > 0) flash -= dt;
 
     ctx.save();
     if (shake > 0) ctx.translate(rnd(-shake, shake), rnd(-shake, shake));
-    drawStars(); drawBackdrop(); drawGrid(); drawRocks(); drawPickups(); drawMines(); drawEnemies(); drawBullets(); drawRockets(); drawDrones(); drawLaser(); drawBolts(); drawBlasts(); drawRings(); drawHoles(); drawEmp(); drawSweeps(); drawPulses(); drawAntis(); drawTrail(); drawPlayer(); drawParticles();
+    drawStars(); drawBackdrop(); drawGrid(); drawRocks(); drawPickups(); drawMines(); drawEnemies(); drawBullets(); drawRockets(); drawDrones(); drawLaser(); drawBolts(); drawBlasts(); drawRings(); drawHoles(); drawEmp(); drawSweeps(); drawPulses(); drawAntis(); drawWorm(); drawTrail(); drawPlayer(); drawParticles();
     ctx.restore();
 
     if (flash > 0) {
@@ -6578,6 +6872,7 @@ function frame(now) {
   } else if (screen === 'shop') {
     updateStars(dt * 0.3); drawStars(); drawShop();
   }
+  drawSlowVeil(); drawGhostRing();
   drawToast();
 }
 
