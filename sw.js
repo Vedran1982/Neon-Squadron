@@ -1,5 +1,5 @@
 /* Neon Squadron - service worker */
-const CACHE = 'neonsquadron-v1.72';
+const CACHE = 'neonsquadron-v1.73';
 const ASSETS = [
   './',
   './index.html',

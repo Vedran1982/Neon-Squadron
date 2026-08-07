@@ -1,10 +1,10 @@
 'use strict';
 /* ============================================================
-   NEON SQUADRON  v1.72
-   Tri nova teška oružja: usporenje vremena, crvotočina i fantomski trup
+   NEON SQUADRON  v1.73
+   Zvezde do ivica ekrana, magnet na pojačanja, sjaj ivica pri pogotku i niskom oklopu
    ============================================================ */
 
-const VER = 'v1.72';
+const VER = 'v1.73';
 const VW = 540;
 let VH = 960, SCALE = 1, DPR = 1, SAFE_TOP = 0, SAFE_BOT = 0;
 
@@ -63,6 +63,7 @@ function segDist2(px, py, x1, y1, x2, y2) {
    ============================================================ */
 let persp = false;
 const HORIZON = 0.15;
+const HP_LOW = 0.30;     // ispod ovoga ivice ekrana pulsiraju crveno
 const P_R = 3.30;        // horizont je 3,3× dalje od ravni u kojoj je tvoj brod
 const P_SPRITE = 1.15;   // koliko je sprajt krupan u tvojoj ravni
 const P_INV = 1 / P_R;
@@ -1555,6 +1556,7 @@ let waveIdx = 0, waveTimer = 0, waveActive = false;
 let pendingSpawns = [];
 let levelDone = false, doneTimer = 0, runCoins = 0;
 let shake = 0, flash = 0, flashColor = C.warn;
+let hitGlow = 0, hitGlowColor = C.warn, hpPulseT = 0;
 let bossRef = null, toast = null, toastT = 0;
 
 let energy = 100, brownout = false, brownFlash = 0;
@@ -1783,21 +1785,84 @@ function drawBackdrop() {
   ctx.restore();
 }
 
+/* Zvezde žive u širem pojasu nego što je ekran: pri nagnutom prikazu
+   sve se ka horizontu skuplja ka sredini, pa bi uzak pojas ostavio
+   gornje uglove prazne. Pojas je tačno onoliko širok koliko treba da
+   najdalja zvezda padne na ivicu ekrana. */
+const STAR_L = -1.15, STAR_R = 2.15;
+function starX() { return rnd(STAR_L, STAR_R) * VW; }
 function initStars() {
   stars.length = 0;
-  for (let i = 0; i < 90; i++)
-    stars.push({ x: Math.random() * VW, y: Math.random() * (VH || 960), s: rnd(0.6, 2.2), v: rnd(18, 90) });
+  const n = Math.round(90 * (STAR_R - STAR_L));
+  for (let i = 0; i < n; i++)
+    stars.push({ x: starX(), y: Math.random() * (VH || 960), s: rnd(0.6, 2.2), v: rnd(18, 90) });
 }
 function updateStars(dt) {
-  for (const s of stars) { s.y += s.v * dt; if (s.y > VH) { s.y = -2; s.x = Math.random() * VW; } }
+  for (const s of stars) { s.y += s.v * dt; if (s.y > VH) { s.y = -2; s.x = starX(); } }
 }
+/* ---------- SJAJ IVICA EKRANA ---------- */
+
+/* Boja iz #rrggbb u rgba(), da bi gradijent mogao da izbledi u prozirno. */
+function hexRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
+
+/* Sjaj sa sve četiri ivice ka unutra. Četiri linearna gradijenta,
+   sabiranjem svetla, pa uglovi ispadnu malo jači — tako i treba. */
+function edgeGlow(color, alpha, depth) {
+  if (alpha <= 0.004 || depth <= 1) return;
+  const dV = Math.min(depth, VH * 0.45);
+  const dH = Math.min(depth, VW * 0.45);
+  const c0 = hexRgba(color, alpha), c1 = hexRgba(color, 0);
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  let g = ctx.createLinearGradient(0, 0, 0, dV);
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, VW, dV);
+  g = ctx.createLinearGradient(0, VH, 0, VH - dV);
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  ctx.fillStyle = g; ctx.fillRect(0, VH - dV, VW, dV);
+  g = ctx.createLinearGradient(0, 0, dH, 0);
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, dH, VH);
+  g = ctx.createLinearGradient(VW, 0, VW - dH, 0);
+  g.addColorStop(0, c0); g.addColorStop(1, c1);
+  ctx.fillStyle = g; ctx.fillRect(VW - dH, 0, dH, VH);
+  ctx.restore();
+}
+
+/* Dva sloja: kratak bljesak na pogodak (plav za štit, crven za oklop)
+   i stalno crveno disanje kad oklop padne ispod 30%. */
+function drawEdgeFX(dt) {
+  if (hitGlow > 0) hitGlow = Math.max(0, hitGlow - dt / 0.38);
+
+  if (player.alive) {
+    const f = clamp(player.hp / player.maxHp, 0, 1);
+    if (f < HP_LOW) {
+      const k = clamp((HP_LOW - f) / HP_LOW, 0, 1);
+      hpPulseT += dt * (1.7 + 3.4 * k);
+      const puls = 0.5 + 0.5 * Math.sin(hpPulseT * Math.PI * 2);
+      edgeGlow(C.warn, (0.09 + 0.24 * k) * (0.45 + 0.55 * puls),
+               VH * (0.06 + 0.21 * k) * (0.7 + 0.3 * puls));
+    } else hpPulseT = 0;
+  }
+
+  if (hitGlow > 0) {
+    const a = hitGlow * hitGlow;
+    edgeGlow(hitGlowColor, 0.46 * a, VH * 0.17 * (0.55 + 0.45 * a));
+  }
+}
+
 function drawStars() {
   ctx.fillStyle = '#8fb6d6';
   for (const s of stars) {
+    const px = pX(s.x, s.y);
+    if (px < -6 || px > VW + 6) continue;
     ctx.globalAlpha = 0.12 + s.s * 0.16;
     if (persp) {
       const sc = pS(s.y);
-      ctx.fillRect(pX(s.x, s.y), pY(s.y), s.s * sc, s.s * 2.2 * sc);
+      ctx.fillRect(px, pY(s.y), s.s * sc, s.s * 2.2 * sc);
     } else ctx.fillRect(s.x, s.y, s.s, s.s * 2.2);
   }
   ctx.globalAlpha = 1;
@@ -2422,7 +2487,7 @@ function startLevel(n, d) {
   waveIdx = 0; waveTimer = levelDef.waves[0].gap || 1; waveActive = false;
   pendingSpawns.length = 0;
   levelDone = false; doneTimer = 0; runCoins = 0;
-  bossRef = null; shake = 0; flash = 0;
+  bossRef = null; shake = 0; flash = 0; hitGlow = 0; hpPulseT = 0;
   player.maxHp = PS.hullMax;
   player.hp = player.maxHp;   // računar se ne oštećuje, pa maxHp ostaje isti ceo nivo
   player.shield = PS.shieldMax;
@@ -3619,9 +3684,10 @@ function updatePickups(dt) {
     const p = pickups[i];
     p.t += dt;
     p.vy = Math.min(p.vy + 260 * dt, 150);
-    // nacrt privlači slabije nego novčić, ali nikad slabije od osnovnog dometa
-    const pmag = p.kind === 'bp' ? Math.max(mag / 3, 220) : mag;
-    if (p.kind !== 'pu' && pmag > 0 && player.alive) {
+    // nacrt i pojačanje privlače slabije nego novčić, ali nikad slabije od osnovnog dometa
+    const slab = p.kind === 'bp' || p.kind === 'pu';
+    const pmag = slab ? Math.max(mag / 3, 220) : mag;
+    if (pmag > 0 && player.alive) {
       const dx = player.x - p.x, dy = player.y - p.y, d = Math.hypot(dx, dy);
       if (d < pmag) {
         const pull = 900 * dt * (1 - d / pmag) + 260 * dt;
@@ -3936,10 +4002,12 @@ function hurtPlayer(dmg) {
     if (player.shield < 0) { player.hp += player.shield; player.shield = 0; }
     shieldPause = 3.0;
     flash = 0.16; flashColor = C.shield;
+    hitGlow = 1; hitGlowColor = C.shield;
   } else {
     player.hp -= dmg;
     shieldPause = 3.0;
     flash = 0.2; flashColor = C.warn;
+    hitGlow = 1; hitGlowColor = C.warn;
   }
   shake = Math.max(shake, 10);
   burst(player.x, player.y, C.player, 10, 160);
@@ -4598,7 +4666,7 @@ function updateTransit(dt) {
   updateBackdrop(dt * zalet);
   for (const st of stars) {
     st.y += st.v * (zalet - 1) * dt;
-    if (st.y > VH) { st.y = -4; st.x = Math.random() * VW; }
+    if (st.y > VH) { st.y = -4; st.x = starX(); }
   }
 
   // gustina raste ka sredini polja pa se pri kraju smiruje
@@ -4854,32 +4922,16 @@ function updateAntis(dt) {
 function drawAntis() {
   ctx.save();
   for (const a of antis) {
-    const sc = pS(a.y), qx = pX(a.x, a.y), qy = pY(a.y), sq = persp ? 0.62 : 1;
+    const sc = pS(a.y), qx = pX(a.x, a.y), qy = pY(a.y);
     const puls = 1 + 0.16 * Math.sin(a.t * 14);
     // postepeno se pojavljuje dok se formira
     const vid = a.phase === 'hold' ? clamp(a.t / 0.55, 0, 1) : 1;
-    ctx.globalAlpha = 0.16 * vid;
-    ctx.strokeStyle = COMP.anti.color;
-    ctx.lineWidth = 1.5 * sc;
-    ctx.beginPath();
-    ctx.ellipse(qx, qy, a.rad * sc, a.rad * sc * sq, 0, 0, Math.PI * 2);
-    ctx.stroke();
     ctx.globalAlpha = 0.9 * vid;
     ctx.fillStyle = COMP.anti.color;
     ctx.shadowColor = COMP.anti.color; ctx.shadowBlur = 26;
     ctx.beginPath();
     ctx.ellipse(qx, qy, a.r * puls * sc * (0.35 + 0.65 * vid), a.r * puls * sc * (0.35 + 0.65 * vid), 0, 0, Math.PI * 2);
     ctx.fill();
-    // pokazuje kuda će poleteti
-    if (a.phase === 'hold' && vid > 0.5) {
-      ctx.globalAlpha = 0.30 * vid;
-      ctx.strokeStyle = COMP.anti.color;
-      ctx.lineWidth = 2 * sc; ctx.setLineDash([8, 10]);
-      ctx.beginPath();
-      ctx.moveTo(qx, qy);
-      ctx.lineTo(pX(a.x, a.y - 260), pY(a.y - 260));
-      ctx.stroke(); ctx.setLineDash([]);
-    }
     ctx.globalAlpha = vid;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
@@ -6823,6 +6875,7 @@ function frame(now) {
       ctx.save(); ctx.globalAlpha = clamp(flash * 1.6, 0, 0.45);
       ctx.fillStyle = flashColor; ctx.fillRect(0, 0, VW, VH); ctx.restore();
     }
+    drawEdgeFX(dt);
     drawHUD();
 
     if (!player.alive) {
